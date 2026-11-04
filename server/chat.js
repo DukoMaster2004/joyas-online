@@ -11,6 +11,8 @@ const knowledge = [
     .join(' ')}`,
   `Preguntas frecuentes publicadas: ${faqs.map((faq) => `${faq.question} ${faq.answer}`).join(' ')}`,
   `Contacto: ${company.whatsapp ? 'WhatsApp configurado' : 'WhatsApp aún no configurado'}; ${company.email ? `correo ${company.email}` : 'correo aún no configurado'}.`,
+  `Canales de WhatsApp: canal ${company.whatsappChannel}; grupo ${company.whatsappGroup}.`,
+  'Las formas de pago y el envío se coordinan por WhatsApp con la tienda al recibir el pedido.',
 ].join('\n');
 
 const systemInstruction = [

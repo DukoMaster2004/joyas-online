@@ -6,6 +6,8 @@ export const company = {
   story:
     'BELLADONA JOYERÍA nació del sueño y emprendimiento de dos personas, impulsadas por la pasión por la belleza, los detalles y la joyería. Lo que comenzó como un proyecto desde casa continúa creciendo gracias a la dedicación y la confianza de sus clientes.',
   whatsapp: viteEnv.VITE_WHATSAPP_NUMBER || '51907244112',
+  whatsappChannel: 'https://whatsapp.com/channel/0029VbFzH7A0lwgymnBDUz3B',
+  whatsappGroup: 'https://chat.whatsapp.com/Fvdrc9FN3PuDImuQoXvEn9',
   email: viteEnv.VITE_CONTACT_EMAIL || '',
   instagram: '',
 };

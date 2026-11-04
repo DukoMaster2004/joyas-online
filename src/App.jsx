@@ -78,9 +78,12 @@ function ProductCard({ product, addToCart }) {
 function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0);
   const unknownPrice = cart.some((item) => item.product.price == null);
-  const message = cart.map(({ product, quantity }) => `${product.name} x${quantity} — ${formatPrice(product.price)}`).join('\n');
+  const message = cart.map(({ product, quantity }) => {
+    const lineTotal = product.price == null ? 'precio por confirmar' : formatPrice(product.price * quantity);
+    return `• ${product.name} (${product.category}) x${quantity} — ${lineTotal}`;
+  }).join('\n');
   const checkoutUrl = company.whatsapp
-    ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera consultar por este pedido:\n${message}\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}`)}`
+    ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera hacer este pedido:\n\n${message}\n\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}\n\n¿Me confirmas disponibilidad, formas de pago y envío?`)}`
     : '';
   return <>
     {open && <button className="drawer-backdrop" aria-label="Cerrar carrito" onClick={onClose} />}
@@ -92,7 +95,7 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
           <div className="cart-item-copy"><h3>{product.name}</h3><p>{formatPrice(product.price)}</p><div className="quantity-control"><button aria-label={`Reducir cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity - 1)}><Minus size={13} /></button><span>{quantity}</span><button aria-label={`Aumentar cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity + 1)}><Plus size={13} /></button></div></div>
           <button className="remove-button" onClick={() => removeProduct(product.id)}>Eliminar</button>
         </article>)}</div>
-        <div className="cart-summary"><div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div><p>El precio final se confirma directamente con BELLADONA.</p>{checkoutUrl ? <a className="button button-dark full-button" href={checkoutUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <button className="button button-dark full-button" onClick={() => alert('El número de WhatsApp aún no está configurado. Añade VITE_WHATSAPP_NUMBER en el archivo .env.')}>Configurar WhatsApp <ArrowUpRight size={16} /></button>}</div>
+        <div className="cart-summary"><div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div><p>El precio final, la disponibilidad y la forma de pago se confirman por WhatsApp.</p>{checkoutUrl ? <a className="button button-dark full-button" href={checkoutUrl} target="_blank" rel="noreferrer">Hacer pedido por WhatsApp <ArrowUpRight size={16} /></a> : <button className="button button-dark full-button" onClick={() => alert('El número de WhatsApp aún no está configurado. Añade VITE_WHATSAPP_NUMBER en el archivo .env.')}>Configurar WhatsApp <ArrowUpRight size={16} /></button>}</div>
       </> : <div className="empty-cart"><ShoppingBag size={30} /><p>Tu bolsa está esperando una pieza especial.</p><button className="button button-outline" onClick={onClose}>Explorar colección</button></div>}
     </aside>
   </>;
@@ -305,7 +308,8 @@ function Contact() {
     <div className="contact-intro"><span className="eyebrow">ESTAMOS PARA TI</span><h2>Hablemos de<br /><em>algo especial.</em></h2><p>¿Tienes una consulta sobre una pieza? Nos encantará ayudarte.</p>
       <div className="contact-detail"><span>WHATSAPP</span><a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer"><strong>+51 907 244 112</strong></a></div>
       {company.email && <div className="contact-detail"><span>CORREO</span><strong>{company.email}</strong></div>}
-      <div className="contact-detail"><span>REDES SOCIALES</span><strong>{company.instagram || 'Instagram por configurar'}</strong></div>
+      <div className="contact-detail"><span>CANALES DE WHATSAPP</span><a href={company.whatsappChannel} target="_blank" rel="noreferrer"><strong>Canal de WhatsApp</strong></a><a href={company.whatsappGroup} target="_blank" rel="noreferrer"><strong>Grupo de WhatsApp</strong></a></div>
+      {company.instagram && <div className="contact-detail"><span>INSTAGRAM</span><a href={company.instagram} target="_blank" rel="noreferrer"><strong>Instagram</strong></a></div>}
       {company.whatsapp && <a className="text-button" href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">Escríbenos por WhatsApp <ArrowUpRight size={15} /></a>}
     </div>
     <form className="contact-form" onSubmit={submit}>
@@ -326,7 +330,7 @@ function Footer() {
   return <footer className="site-footer"><div className="footer-main">
     <div className="footer-brand"><Link to="/" className="wordmark"><span>BELLADONA</span><small>JOYERÍA</small></Link><p>Elegancia que refleja tu esencia.</p></div>
     <div className="footer-links"><span className="eyebrow">EXPLORA</span><a href="/#coleccion">Colección</a><a href="/#nosotros">Nuestra historia</a><a href="/#galeria">Galería</a><a href="/#contacto">Contacto</a></div>
-    <div className="footer-links"><span className="eyebrow">CONTACTO</span><span>{company.email || 'Correo por configurar'}</span>{company.whatsapp ? <a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">WhatsApp</a> : <span>WhatsApp por configurar</span>}{company.instagram ? <a href={company.instagram} target="_blank" rel="noreferrer"><Instagram size={15} /> Instagram</a> : <span>Instagram por configurar</span>}</div>
+    <div className="footer-links"><span className="eyebrow">CONTACTO</span>{company.email && <span>{company.email}</span>}{company.whatsapp && <a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">WhatsApp +51 907 244 112</a>}<a href={company.whatsappChannel} target="_blank" rel="noreferrer">Canal de WhatsApp</a><a href={company.whatsappGroup} target="_blank" rel="noreferrer">Grupo de WhatsApp</a>{company.instagram && <a href={company.instagram} target="_blank" rel="noreferrer"><Instagram size={15} /> Instagram</a>}</div>
     <div className="footer-signoff">B.<span>JOYAS PARA ATESORAR</span></div>
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} BELLADONA JOYERÍA</span><span>Hecho con dedicación en Perú</span><a href="#inicio">Volver arriba ↑</a></div></footer>;
 }

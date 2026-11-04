@@ -47,6 +47,9 @@ img { display: block; max-width: 100%; }
 .site-header { height: 78px; padding: 0 5.2%; display: flex; align-items: center; justify-content: space-between; position: sticky; z-index: 20; top: 0; background: rgba(245,240,233,.94); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
 .wordmark { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; letter-spacing: .22em; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .wordmark small { margin-top: 6px; font-size: 8px; letter-spacing: .48em; font-weight: 400; }
+.wordmark-header { flex-direction: row; gap: 10px; }
+.wordmark-text { display: inline-flex; flex-direction: column; align-items: center; }
+.wordmark-logo { width: 34px; height: 34px; border-radius: 50%; background: #f6f1eb; flex: none; }
 .main-nav { display: flex; align-items: center; gap: clamp(24px, 3.2vw, 52px); margin-left: 6%; }
 .main-nav a { font-size: 11px; letter-spacing: .08em; color: var(--muted); transition: color .2s; }
 .main-nav a:hover { color: var(--gold); }
@@ -180,7 +183,7 @@ h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(36px, 4.4vw, 
   .hero-content, .hero-scroll { left: 8%; }.section-wrap { padding-left: 6%; padding-right: 6%; }.story-copy { padding: 9%; }.gallery-grid { grid-template-rows: 180px 180px; }.contact-section { gap: 6%; }.video-section { padding-left: 6%; padding-right: 6%; }
 }
 @media (max-width: 640px) {
-  html { scroll-padding-top: 68px; }.site-header { height: 66px; padding: 0 5%; }.mobile-menu-button { display: inline-grid; }.site-header > .wordmark { position: absolute; left: 50%; transform: translateX(-50%); }.wordmark { font-size: 13px; }.wordmark small { font-size: 7px; }.header-actions { gap: 3px; }.icon-button { padding: 6px; }.icon-button svg { width: 17px; }
+  html { scroll-padding-top: 68px; }.site-header { height: 66px; padding: 0 5%; }.mobile-menu-button { display: inline-grid; }.site-header > .wordmark { position: absolute; left: 50%; transform: translateX(-50%); }.wordmark { font-size: 13px; }.wordmark small { font-size: 7px; }.wordmark-header { gap: 7px; }.wordmark-logo { width: 28px; height: 28px; }.header-actions { gap: 3px; }.icon-button { padding: 6px; }.icon-button svg { width: 17px; }
   .main-nav { display: none; position: absolute; top: 65px; left: 0; right: 0; margin: 0; padding: 15px 7% 22px; background: var(--surface); border-bottom: 1px solid var(--line); flex-direction: column; align-items: flex-start; gap: 17px; }.main-nav.is-open { display: flex; }.main-nav a { font-size: 11px; }
   .hero { height: 72vh; min-height: 530px; max-height: 700px; }.hero-image { object-position: 58% center; }.hero-content, .hero-scroll { left: 7%; }.hero-content { top: 48%; }.hero h1 { font-size: clamp(49px, 12vw, 72px); }.hero-content > p { font-size: 19px; }.hero-side-note { right: 4%; bottom: 75px; font-size: 7px; }
   .section-wrap { padding-left: 6%; padding-right: 6%; }.intro-section { padding-top: 83px; padding-bottom: 62px; }.intro-section > p { font-size: 12px; }.collection-section { padding-top: 45px; padding-bottom: 70px; }.section-heading { align-items: flex-start; }.section-heading h2 { font-size: 35px; }.desktop-link { display: none; }.filter-row { gap: 19px; margin-bottom: 20px; }.product-grid { grid-template-columns: 1fr 1fr; gap: 27px 12px; }.product-image { aspect-ratio: .76; }.product-info { display: block; padding-top: 10px; }.product-info h3 { font-size: 16px; }.price { display: block; padding-top: 7px; }.product-category { left: 7px; bottom: 7px; padding: 6px 7px; font-size: 7px; }.save-product { width: 30px; height: 30px; right: 7px; top: 7px; }.add-button { margin-top: 8px; font-size: 7px; }
@@ -189,4 +192,7 @@ h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(36px, 4.4vw, 
   .contact-section { grid-template-columns: 1fr; gap: 40px; padding-top: 75px; padding-bottom: 75px; }.form-grid { gap: 19px 13px; }.form-submit-row { align-items: flex-start; flex-direction: column; gap: 10px; }.site-footer { padding: 42px 7% 0; }.footer-main { grid-template-columns: 1fr 1fr; gap: 32px 22px; }.footer-signoff { justify-self: start; font-size: 43px; }.footer-bottom { min-height: 74px; flex-wrap: wrap; justify-content: space-between; padding: 13px 0; }.footer-bottom span:nth-child(2) { display: none; }
   .chat-trigger { right: 14px; bottom: 14px; padding: 12px 14px; }.chat-panel { right: 10px; bottom: 72px; }.whatsapp-float { right: 18px; bottom: 72px; width: 37px; height: 37px; }
   .product-detail { padding-top: 24px; padding-bottom: 60px; }.detail-grid { grid-template-columns: 1fr; gap: 28px; }.detail-image img { max-height: 470px; }.detail-copy { max-width: none; }.detail-copy h1 { font-size: 44px; }.lightbox { padding: 25px 14px; }
+}
+@media (max-width: 380px) {
+  .wordmark { font-size: 12px; }.wordmark-header { gap: 5px; }.wordmark-logo { width: 22px; height: 22px; }
 }

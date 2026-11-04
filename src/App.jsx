@@ -39,8 +39,9 @@ function Header({ dark, setDark, cartCount, openCart }) {
   return (
     <header className="site-header">
       <button className="icon-button mobile-menu-button" aria-label="Abrir menú" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
-      <Link to="/" className="wordmark" aria-label="BELLADONA, inicio">
-        <span>BELLADONA</span><small>JOYERÍA</small>
+      <Link to="/" className="wordmark wordmark-header" aria-label="BELLADONA, inicio">
+        <img className="wordmark-logo" src="/logo-diamante.png" alt="" width="34" height="34" />
+        <span className="wordmark-text"><span>BELLADONA</span><small>JOYERÍA</small></span>
       </Link>
       <nav className={`main-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegación principal">
         {nav.map(([label, href]) => <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>)}

@@ -16,7 +16,7 @@
 
 - El carrito y la preferencia visual se guardan en el almacenamiento local del navegador.
 - El asistente usa preguntas frecuentes locales, no inteligencia artificial remota.
-- El formulario utiliza `mailto:`; no persiste ni transmite datos a un backend.
+- El formulario abre una conversación de WhatsApp con el texto preparado; el visitante debe confirmar el envío dentro de WhatsApp. No persiste los datos en un servidor.
 - No existe integración de pago ni sistema de inventario. No describir estas funciones como disponibles.
 
 Antes de habilitar una API de IA, pagos o recepción real de formularios, implementa un backend seguro, valida entradas y documenta el tratamiento de datos.

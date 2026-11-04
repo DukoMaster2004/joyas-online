@@ -1,10 +1,12 @@
+const viteEnv = import.meta.env || {};
+
 export const company = {
   name: 'BELLADONA JOYERÍA',
   tagline: 'Elegancia que refleja tu esencia.',
   story:
     'BELLADONA JOYERÍA nació del sueño y emprendimiento de dos personas, impulsadas por la pasión por la belleza, los detalles y la joyería. Lo que comenzó como un proyecto desde casa continúa creciendo gracias a la dedicación y la confianza de sus clientes.',
-  whatsapp: import.meta.env.VITE_WHATSAPP_NUMBER || '',
-  email: import.meta.env.VITE_CONTACT_EMAIL || '',
+  whatsapp: viteEnv.VITE_WHATSAPP_NUMBER || '51907244112',
+  email: viteEnv.VITE_CONTACT_EMAIL || '',
   instagram: '',
 };
 

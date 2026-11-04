@@ -14,8 +14,9 @@
 - Productos: sustituir los registros en `products` dentro de `src/data.js`. Define precios solamente cuando sean oficiales; `null` presenta “Consultar precio”.
 - Fotografías: cambiar `image` en productos y los identificadores de imagen de `galleryImages` en `src/data.js`. La galería trae referencias visuales temporales, no las 30 fotos oficiales solicitadas. Sustitúyelas o amplíalas con fotografías propias o autorizadas. Para recursos locales, guarda archivos aprobados en `public/images/` y usa rutas como `/images/anillo-01.jpg`.
 - Videos: completa `src` y `poster` en los 20 elementos de `videoSlots` en `src/data.js`; los espacios vacíos no muestran reproductores ficticios.
-- WhatsApp: define `VITE_WHATSAPP_NUMBER` en `.env`, sin signo más ni separadores.
-- Correo: define `VITE_CONTACT_EMAIL`; el formulario usa `mailto:` y no envía datos a un servidor.
+- WhatsApp: el número configurado por defecto es `+51 907 244 112`. Se puede cambiar con `VITE_WHATSAPP_NUMBER` en `.env`, usando código de país y solo dígitos.
+- Formulario: valida los campos y abre WhatsApp con el nombre, celular, correo, asunto y mensaje ya preparados. La persona debe revisar y pulsar Enviar dentro de WhatsApp; el sitio no manda el mensaje automáticamente.
+- Correo: define `VITE_CONTACT_EMAIL` para mostrar el correo oficial como dato adicional.
 - Redes sociales: cambia `instagram` en el objeto `company` por la URL oficial.
 - Colores: edita las variables CSS al principio de `src/styles.css`.
 - Asistente: mantén respuestas verificadas en `faqs` en `src/data.js`; la lógica de consulta local está en `Assistant` en `src/App.jsx`. Una integración con IA requiere un backend que proteja la clave y aporte contexto comercial confirmado.

@@ -5,7 +5,7 @@ import {
   Instagram, Menu, MessageCircle, Minus, Moon, Plus, Search, ShoppingBag,
   Sun, X,
 } from 'lucide-react';
-import { company, faqs, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
+import { company, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
 
 function readStorage(key, fallback) {
   try {
@@ -100,31 +100,58 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
 function Assistant() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [chatError, setChatError] = useState('');
   const [messages, setMessages] = useState([{ role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' }]);
-  function answer(question) {
-    const normalized = question.toLowerCase();
-    const matched = faqs.find((faq) => faq.question.toLowerCase().split(' ').some((word) => word.length > 4 && normalized.includes(word)));
-    if (normalized.includes('precio') || normalized.includes('cuesta')) return 'Los precios aún no están configurados en el catálogo. Escríbenos por WhatsApp para consultar el precio actualizado.';
-    if (normalized.includes('producto') || normalized.includes('anillo') || normalized.includes('collar') || normalized.includes('arete') || normalized.includes('pulsera')) {
-      const found = products.filter((p) => `${p.name} ${p.category}`.toLowerCase().includes(normalized));
-      return found.length ? `En el catálogo: ${found.map((p) => `${p.name} (${formatPrice(p.price)})`).join(', ')}.` : 'Puedes explorar las piezas disponibles en la sección Colección. Los materiales y precios aún deben confirmarse.';
+  async function send(text = draft) {
+    const question = text.trim();
+    if (!question || loading) return;
+    const completedTurns = [];
+    for (let index = 1; index < messages.length - 1; index += 2) {
+      const userMessage = messages[index];
+      const assistantMessage = messages[index + 1];
+      if (userMessage.role === 'user' && assistantMessage.role === 'assistant') {
+        completedTurns.push(
+          { role: 'user', text: userMessage.text },
+          { role: 'model', text: assistantMessage.text },
+        );
+      }
     }
-    if (normalized.includes('whatsapp') || normalized.includes('contacto') || normalized.includes('pedido')) return company.whatsapp ? 'Puedes escribirnos desde el botón de WhatsApp que aparece en esta página.' : 'El contacto por WhatsApp estará disponible cuando se configure el número comercial oficial.';
-    if (normalized.includes('envío') || normalized.includes('envio')) return 'La cobertura y las condiciones de envío deben confirmarse directamente con BELLADONA.';
-    return matched?.answer || 'No tengo información confirmada sobre eso todavía. Contacta directamente a BELLADONA para recibir una respuesta precisa.';
-  }
-  const send = (text = draft) => {
-    if (!text.trim()) return;
-    setMessages((items) => [...items, { role: 'user', text: text.trim() }, { role: 'assistant', text: answer(text.trim()) }]);
+    const history = completedTurns.slice(-12);
+    setMessages((items) => [...items, { role: 'user', text: question }]);
     setDraft('');
+    setChatError('');
+    setLoading(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: question, history }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || `No se pudo consultar Gemini (HTTP ${response.status}).`);
+      }
+      if (typeof result.reply !== 'string' || !result.reply.trim()) {
+        throw new Error('Gemini devolvió una respuesta vacía. Inténtalo de nuevo.');
+      }
+      setMessages((items) => [...items, { role: 'assistant', text: result.reply.trim() }]);
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : 'No se pudo enviar la consulta a Gemini.');
+    } finally {
+      setLoading(false);
+    }
   };
   return <>
     {open && <section className="chat-panel" aria-label="Chat con asistente BELLADONA">
-      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>Respuestas sobre la tienda</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
+      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>Con tecnología Gemini</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
       <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{message.text}</div>)}
-        {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)}>{q}</button>)}</div>}
+        {loading && <div className="chat-message assistant chat-loading" role="status">Gemini está escribiendo…</div>}
+        {chatError && <p className="chat-error" role="alert">{chatError}</p>}
+        {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)} disabled={loading}>{q}</button>)}</div>}
       </div>
-      <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe tu consulta..." aria-label="Escribe tu consulta" /><button aria-label="Enviar mensaje"><ArrowRight size={18} /></button></form>
+      <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe tu consulta..." aria-label="Escribe tu consulta" maxLength={1500} disabled={loading} /><button aria-label="Enviar mensaje" disabled={loading || !draft.trim()}><ArrowRight size={18} /></button></form>
+      <small className="chat-privacy">Tu consulta se procesa con Google Gemini.</small>
     </section>}
     <button className="chat-trigger" aria-label={open ? 'Cerrar asistente' : 'Abrir asistente'} onClick={() => setOpen(!open)}>{open ? <X /> : <MessageCircle />}<span>{open ? '' : '¿Te ayudamos?'}</span></button>
   </>;
@@ -192,23 +219,33 @@ function Home({ addToCart }) {
 function Contact() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: '', message: '' });
   const [feedback, setFeedback] = useState('');
+  const [whatsappLink, setWhatsappLink] = useState('');
   function submit(e) {
     e.preventDefault();
     if (!Object.values(form).every((value) => value.trim())) {
       setFeedback('Completa todos los campos para preparar tu consulta.');
+      setWhatsappLink('');
       return;
     }
-    if (!company.email) {
-      setFeedback('El correo de contacto aún no está configurado. Puedes escribirnos por WhatsApp o actualizar VITE_CONTACT_EMAIL.');
-      return;
-    }
-    const body = `Nombre: ${form.name}\nCelular: ${form.phone}\nCorreo: ${form.email}\n\n${form.message}`;
-    window.location.href = `mailto:${company.email}?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(body)}`;
-    setFeedback('Se abrió tu aplicación de correo para enviar la consulta.');
+    const body = [
+      'Hola, quisiera hacer una consulta a BELLADONA JOYERÍA.',
+      '',
+      `Nombre: ${form.name}`,
+      `Celular: ${form.phone}`,
+      `Correo: ${form.email}`,
+      `Asunto: ${form.subject}`,
+      '',
+      form.message,
+    ].join('\n');
+    const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(body)}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    setFeedback('WhatsApp se abrirá con tu mensaje preparado. Revísalo y pulsa Enviar en WhatsApp.');
+    setWhatsappLink(whatsappUrl);
   }
   return <section className="contact-section section-wrap" id="contacto">
     <div className="contact-intro"><span className="eyebrow">ESTAMOS PARA TI</span><h2>Hablemos de<br /><em>algo especial.</em></h2><p>¿Tienes una consulta sobre una pieza? Nos encantará ayudarte.</p>
-      <div className="contact-detail"><span>ATENCIÓN PERSONAL</span><strong>{company.email || 'Correo por configurar'}</strong></div>
+      <div className="contact-detail"><span>WHATSAPP</span><a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer"><strong>+51 907 244 112</strong></a></div>
+      {company.email && <div className="contact-detail"><span>CORREO</span><strong>{company.email}</strong></div>}
       <div className="contact-detail"><span>REDES SOCIALES</span><strong>{company.instagram || 'Instagram por configurar'}</strong></div>
       {company.whatsapp && <a className="text-button" href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">Escríbenos por WhatsApp <ArrowUpRight size={15} /></a>}
     </div>
@@ -220,8 +257,8 @@ function Contact() {
         <label>Asunto<input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required /></label>
       </div>
       <label>Mensaje<textarea rows="4" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required /></label>
-      <div className="form-submit-row"><button className="button button-dark" type="submit">Preparar consulta <ArrowRight size={16} /></button><span>Los datos no se envían a un servidor.</span></div>
-      {feedback && <p className="form-feedback" role="status">{feedback}</p>}
+      <div className="form-submit-row"><button className="button button-dark" type="submit">Enviar por WhatsApp <ArrowRight size={16} /></button><span>Se abrirá WhatsApp para que confirmes el envío.</span></div>
+      {feedback && <p className="form-feedback" role="status">{feedback}{whatsappLink && <> <a href={whatsappLink} target="_blank" rel="noreferrer">Abrir WhatsApp</a></>}</p>}
     </form>
   </section>;
 }

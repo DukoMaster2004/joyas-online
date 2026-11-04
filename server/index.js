@@ -32,6 +32,10 @@ app.use('/api/chat', (req, res, next) => {
   return next();
 });
 
+app.get('/api/chat/status', (_req, res) => {
+  res.json({ configured: Boolean(apiKey), provider: 'Gemini' });
+});
+
 const knowledge = [
   `Marca: ${company.name}. Frase: ${company.tagline}.`,
   `Historia publicada: ${company.story}`,
@@ -55,7 +59,10 @@ const systemInstruction = [
 
 app.post('/api/chat', async (req, res) => {
   if (!apiKey) {
-    return res.status(503).json({ error: 'El chat de Gemini aún no está configurado. Añade GEMINI_API_KEY al archivo .env y reinicia el servidor.' });
+    return res.status(503).json({
+      code: 'GEMINI_NOT_CONFIGURED',
+      error: 'Gemini no está configurado. El chat puede responder con información local.',
+    });
   }
 
   const { message, history = [] } = req.body ?? {};

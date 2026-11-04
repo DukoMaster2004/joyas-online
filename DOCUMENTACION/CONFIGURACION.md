@@ -23,7 +23,7 @@ Obtén una clave de Gemini API en Google AI Studio. Si una clave se compartió e
 - Configura `GEMINI_API_KEY` y opcionalmente `GEMINI_MODEL` como variables privadas en el entorno del hosting.
 - El servidor pasa a Gemini solo la conversación reciente y el contexto publicado de productos, empresa y preguntas frecuentes. Incluye límites de longitud, historial y frecuencia.
 
-El chat avisa explícitamente si falta la clave, se alcanza el límite o Gemini falla. El modelo está limitado a la información proporcionada; confirma los datos comerciales antes de publicarlos.
+Si aún no existe `.env` o falta la clave, el chat funciona en **modo local** con el catálogo y las preguntas frecuentes; no responde con el error de configuración. Para respuestas generativas, agrega una clave válida en `.env` y reinicia `npm run dev`. El chat avisa si se alcanza el límite o Gemini falla. El modelo está limitado a la información proporcionada; confirma los datos comerciales antes de publicarlos.
 
 ## Otros datos
 

@@ -5,7 +5,7 @@ import {
   Instagram, Menu, MessageCircle, Minus, Moon, Plus, Search, ShoppingBag,
   Sun, X,
 } from 'lucide-react';
-import { company, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
+import { company, faqs, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
 
 function readStorage(key, fallback) {
   try {
@@ -102,10 +102,60 @@ function Assistant() {
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatError, setChatError] = useState('');
+  const [localMode, setLocalMode] = useState(null);
   const [messages, setMessages] = useState([{ role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' }]);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/chat/status')
+      .then((response) => {
+        if (!response.ok) throw new Error(`No se pudo consultar la configuración del chat (HTTP ${response.status}).`);
+        return response.json();
+      })
+      .then((status) => {
+        if (active) setLocalMode(!status.configured);
+      })
+      .catch(() => {
+        if (active) setLocalMode(true);
+      });
+    return () => { active = false; };
+  }, []);
+
+  function answerLocally(question) {
+    const normalized = question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const matchedProduct = products.find((product) =>
+      `${product.name} ${product.category}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(normalized),
+    );
+    if (normalized.includes('precio') || normalized.includes('cuesta') || normalized.includes('cuanto')) {
+      return 'Los precios todavía no están configurados. Consulta directamente con BELLADONA para conocer el precio actualizado.';
+    }
+    if (normalized.includes('producto') || normalized.includes('anillo') || normalized.includes('collar') || normalized.includes('arete') || normalized.includes('pulsera')) {
+      if (matchedProduct) {
+        return `${matchedProduct.name}: ${matchedProduct.description} El material y la disponibilidad deben confirmarse con BELLADONA.`;
+      }
+      return `En el catálogo de demostración aparecen: ${products.map((product) => `${product.name} (${product.category})`).join(', ')}. Confirma la disponibilidad directamente con BELLADONA.`;
+    }
+    const faq = faqs.find((item) => {
+      const terms = item.question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\W+/).filter((term) => term.length > 4);
+      return terms.some((term) => normalized.includes(term));
+    });
+    return faq?.answer || 'El chat está en modo local y no tengo una respuesta confirmada para eso. Configura Gemini para habilitar respuestas generativas o contacta directamente con BELLADONA.';
+  }
+
   async function send(text = draft) {
     const question = text.trim();
     if (!question || loading) return;
+    if (localMode === true) {
+      setMessages((items) => [...items, {
+        role: 'user',
+        text: question,
+      }, {
+        role: 'assistant',
+        text: answerLocally(question),
+      }]);
+      setDraft('');
+      setChatError('');
+      return;
+    }
     const completedTurns = [];
     for (let index = 1; index < messages.length - 1; index += 2) {
       const userMessage = messages[index];
@@ -130,6 +180,14 @@ function Assistant() {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (result.code === 'GEMINI_NOT_CONFIGURED') {
+          setLocalMode(true);
+          setMessages((items) => [...items, {
+            role: 'assistant',
+            text: `Gemini no está configurado; te respondo con la información disponible en la página. ${answerLocally(question)}`,
+          }]);
+          return;
+        }
         throw new Error(result.error || `No se pudo consultar Gemini (HTTP ${response.status}).`);
       }
       if (typeof result.reply !== 'string' || !result.reply.trim()) {
@@ -144,14 +202,14 @@ function Assistant() {
   };
   return <>
     {open && <section className="chat-panel" aria-label="Chat con asistente BELLADONA">
-      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>Con tecnología Gemini</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
+      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>{localMode === true ? 'Modo local · Gemini sin configurar' : localMode === false ? 'Con tecnología Gemini' : 'Conectando…'}</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
       <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{message.text}</div>)}
         {loading && <div className="chat-message assistant chat-loading" role="status">Gemini está escribiendo…</div>}
         {chatError && <p className="chat-error" role="alert">{chatError}</p>}
         {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)} disabled={loading}>{q}</button>)}</div>}
       </div>
       <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe tu consulta..." aria-label="Escribe tu consulta" maxLength={1500} disabled={loading} /><button aria-label="Enviar mensaje" disabled={loading || !draft.trim()}><ArrowRight size={18} /></button></form>
-      <small className="chat-privacy">Tu consulta se procesa con Google Gemini.</small>
+      <small className="chat-privacy">{localMode === true ? 'Respuestas locales; Gemini se activa al configurar la clave.' : 'Tu consulta se procesa con Google Gemini.'}</small>
     </section>}
     <button className="chat-trigger" aria-label={open ? 'Cerrar asistente' : 'Abrir asistente'} onClick={() => setOpen(!open)}>{open ? <X /> : <MessageCircle />}<span>{open ? '' : '¿Te ayudamos?'}</span></button>
   </>;

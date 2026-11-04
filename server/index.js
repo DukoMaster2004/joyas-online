@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { company, faqs, formatPrice, products } from '../src/data.js';
 
 const app = express();
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 3002;
 const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const apiKey = process.env.GEMINI_API_KEY;
 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
@@ -99,13 +99,18 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [...safeHistory, { role: 'user', parts: [{ text: message.trim() }] }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 600,
+          thinkingConfig: { thinkingLevel: 'low' },
+        },
       }),
       signal: controller.signal,
     });
 
     if (!response.ok) {
-      console.error(`Gemini API returned HTTP ${response.status}`);
+      const detail = await response.text().catch(() => '');
+      console.error(`Gemini API returned HTTP ${response.status}`, detail.slice(0, 400));
       const status = response.status === 429 ? 429 : 502;
       return res.status(status).json({
         error: response.status === 429
@@ -162,7 +167,15 @@ setInterval(() => {
   }
 }, windowMs).unref();
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`BELLADONA API escuchando en http://localhost:${port}`);
   if (!apiKey) console.warn('GEMINI_API_KEY no está configurada; el endpoint de chat responderá con HTTP 503.');
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`El puerto ${port} ya está en uso. Cierra la otra ventana con "npm run dev" o cambia PORT en el archivo .env.`);
+    process.exit(1);
+  }
+  throw error;
 });

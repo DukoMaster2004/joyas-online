@@ -17,8 +17,8 @@ Obtén una clave de Gemini API en Google AI Studio. Si una clave se compartió e
 
 ## Ejecutar y desplegar el chat
 
-- `npm run dev` inicia Vite y el servidor Express de la API local en paralelo.
-- El frontend solicita `POST /api/chat`; Vite reenvía esa ruta al servidor local.
+- `npm run dev` inicia Vite y el servidor Express de la API local en paralelo. La API usa el puerto `3002` por defecto.
+- El frontend solicita `POST /api/chat`; Vite reenvía esa ruta al servidor local. Si defines `PORT` en `.env`, Vite usa ese mismo puerto.
 - En producción, ejecuta `npm run build` y después `npm start`. Express sirve el build y la API desde el mismo host.
 - Configura `GEMINI_API_KEY` y opcionalmente `GEMINI_MODEL` como variables privadas en el entorno del hosting.
 - El servidor pasa a Gemini solo la conversación reciente y el contexto publicado de productos, empresa y preguntas frecuentes. Incluye límites de longitud, historial y frecuencia.

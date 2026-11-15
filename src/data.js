@@ -6,6 +6,10 @@ export const company = {
   story:
     'BELLADONA JOYERÍA nació del sueño y emprendimiento de dos personas, impulsadas por la pasión por la belleza, los detalles y la joyería. Lo que comenzó como un proyecto desde casa continúa creciendo gracias a la dedicación y la confianza de sus clientes.',
   whatsapp: viteEnv.VITE_WHATSAPP_NUMBER || '51907244112',
+  orderWhatsapps: [
+    { number: '51951012633', label: '+51 951 012 633' },
+    { number: '51907244112', label: '+51 907 244 112' },
+  ],
   whatsappChannel: 'https://whatsapp.com/channel/0029VbFzH7A0lwgymnBDUz3B',
   whatsappGroup: 'https://chat.whatsapp.com/Fvdrc9FN3PuDImuQoXvEn9',
   email: viteEnv.VITE_CONTACT_EMAIL || '',
@@ -19,6 +23,14 @@ export const products = [
   { id: 'collar-corazon-pequeno', name: 'Collar Corazón Pequeño', category: 'Collares', description: 'Collar dorado con dije de corazón pequeño y piedra brillante, delicado y especial.', material: 'Metal dorado con piedra cristal', availability: 'Disponible', price: 45, image: '/productos/collar-corazon-pequeno.jpg' },
   { id: 'collar-piedra-negra', name: 'Collar Piedra Negra', category: 'Collares', description: 'Collar dorado con dije ovalado de piedra negra, elegante y con carácter.', material: 'Metal dorado con piedra negra', availability: 'Disponible', price: 38, image: '/productos/collar-piedra-negra.jpg' },
   { id: 'pulseras-2-en-1', name: 'Pulseras 2 en 1', category: 'Pulseras', description: 'Dos pulseras doradas en un solo set: una con cuentas rojas trenzadas y otra de cadena fina con piedra cristal.', material: 'Metal dorado con cuentas rojas y piedra cristal', availability: 'Disponible', price: 40, image: '/productos/pulseras-2-en-1.jpg' },
+  { id: 'aretes-flores-blancas-nacaradas', name: 'Aretes Flores Blancas Nacaradas', category: 'Aretes', description: 'Aretes dorados con racimos de flores blancas de pétalos nacarados, un detalle romántico y luminoso.', material: 'Metal dorado con flores nacaradas', availability: 'Disponible', price: 45, image: '/productos/aretes-flores-blancas-nacaradas.jpg' },
+  { id: 'arracadas-gruesas-u', name: 'Arracadas Gruesas en U', category: 'Aretes', description: 'Arracadas doradas gruesas y lisas con diseño geométrico en U y delicado relieve labrado.', material: 'Metal dorado con acabado labrado', availability: 'Disponible', price: 35, image: '/productos/arracadas-gruesas-u.jpg' },
+  { id: 'aretes-corazon-circonias', name: 'Aretes Corazón con Circonias', category: 'Aretes', description: 'Aretes pequeños en forma de corazón dorado con pedrería de circonias brillantes.', material: 'Metal dorado con circonias', availability: 'Disponible', price: 20, image: '/productos/aretes-corazon-circonias.jpg' },
+  { id: 'argollas-medianas-labradas', name: 'Argollas Medianas Labradas', category: 'Aretes', description: 'Argollas medianas doradas con relieve labrado y acabado texturizado.', material: 'Metal dorado con acabado labrado', availability: 'Disponible', price: 34, image: '/productos/argollas-medianas-labradas.jpg' },
+  { id: 'argollas-anchas-chunky', name: 'Argollas Anchas Tipo Chunky', category: 'Aretes', description: 'Argollas anchas y abombadas doradas estilo chunky, un clásico con presencia.', material: 'Metal dorado', availability: 'Disponible', price: 35, image: '/productos/argollas-anchas-chunky.jpg' },
+  { id: 'argollas-rectangulares-minimalistas', name: 'Argollas Rectangulares Minimalistas', category: 'Aretes', description: 'Argollas pequeñas rectangulares doradas, lisas y minimalistas.', material: 'Metal dorado', availability: 'Disponible', price: 18, image: '/productos/argollas-rectangulares.jpg' },
+  { id: 'aretes-estrella-mar-nacarada', name: 'Aretes Estrella de Mar Nacarada', category: 'Aretes', description: 'Aretes con silueta de estrella de mar, borde dorado y relleno nacarado.', material: 'Metal dorado con nácar', availability: 'Disponible', price: 30, image: '/productos/aretes-estrella-mar-nacarada.jpg' },
+  { id: 'argollas-dije-triangular', name: 'Argollas Dije Triangular Colgante', category: 'Aretes', description: 'Argollas doradas con dije colgante geométrico de punta triangular.', material: 'Metal dorado', availability: 'Disponible', price: 20, image: '/productos/argollas-dije-triangular.jpg' },
 ];
 
 // Galería oculta por ahora (sin fotos). Para mostrarla de nuevo, descomenta el bloque de abajo.
@@ -56,10 +68,10 @@ export const videoSlots = Array.from({ length: 20 }, (_, index) => ({
 }));
 
 export const faqs = [
-  { question: '¿Qué productos ofrecen?', answer: 'Tenemos cinco modelos de collares — Flor de Cataleya, Corazón Rojo, Perlita Plateado, Corazón Pequeño y Piedra Negra — y un set de Pulseras 2 en 1. Puedes verlos todos en la colección.' },
-  { question: '¿Cuánto cuestan?', answer: 'Los precios van de S/ 35 a S/ 45 según la pieza. Cada producto muestra su precio en el catálogo.' },
+  { question: '¿Qué productos ofrecen?', answer: 'Tenemos collares, un set de pulseras y una línea de aretes y argollas: flores nacaradas, corazón con circonias, estrella de mar y varios estilos de argollas. Puedes verlos todos en la colección.' },
+  { question: '¿Cuánto cuestan?', answer: 'Los precios van de S/ 18 a S/ 45 según la pieza. Cada producto muestra su precio en el catálogo.' },
   { question: '¿Cómo hago un pedido?', answer: 'Agrega las piezas al carrito y presiona "Hacer pedido por WhatsApp". Ahí se confirman la disponibilidad y las formas de pago.' },
-  { question: '¿Qué materiales utilizan?', answer: 'Cada pieza indica su material en su ficha: tenemos opciones doradas y plateadas con piedras cristal, detalles esmaltados y cuentas.' },
+  { question: '¿Qué materiales utilizan?', answer: 'Cada pieza indica su material en su ficha: opciones doradas y plateadas con piedras cristal o circonias, detalles esmaltados, flores y nácar.' },
   { question: '¿Realizan envíos?', answer: 'Las condiciones y el costo de envío se coordinan por WhatsApp al confirmar tu pedido.' },
 ];
 

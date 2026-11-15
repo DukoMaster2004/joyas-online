@@ -3,7 +3,7 @@ import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Heart,
   Instagram, Menu, MessageCircle, Minus, Moon, Plus, Search, ShoppingBag,
-  Sun, X,
+  Sun, X, ZoomIn,
 } from 'lucide-react';
 import { company, faqs, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
 
@@ -60,18 +60,41 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
   );
 }
 
+function ImageZoom({ src, alt, label, onClose }) {
+  useEffect(() => {
+    const onKey = (event) => { if (event.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+  return <div className="lightbox product-lightbox" role="dialog" aria-modal="true" aria-label={`Imagen ampliada: ${label}`} onClick={onClose}>
+    <button className="lightbox-close icon-button" aria-label="Cerrar imagen ampliada" onClick={onClose} autoFocus><X /></button>
+    <img src={src} alt={alt} onClick={(event) => event.stopPropagation()} />
+    <span>{label}</span>
+  </div>;
+}
+
 function ProductCard({ product, addToCart, isFavorite, onToggleFavorite }) {
+  const [zoomOpen, setZoomOpen] = useState(false);
   return <article className="product-card">
-    <Link className="product-image" to={`/producto/${product.id}`}>
-      <img src={imageUrl(product.image)} alt={product.name} loading="lazy" />
-      <span className="product-category">{product.category}</span>
-    </Link>
+    <div className="product-media">
+      <Link className="product-image" to={`/producto/${product.id}`}>
+        <img src={imageUrl(product.image)} alt={product.name} loading="lazy" />
+        <span className="product-category">{product.category}</span>
+      </Link>
+      <button className="zoom-product" aria-label={`Ampliar foto de ${product.name}`} onClick={() => setZoomOpen(true)}><ZoomIn size={16} /></button>
+    </div>
     <button className={`save-product ${isFavorite ? 'saved' : ''}`} aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Guardar ${product.name} en favoritos`} onClick={() => onToggleFavorite(product.id)}><Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} /></button>
     <div className="product-info">
       <div><h3><Link to={`/producto/${product.id}`}>{product.name}</Link></h3><p>{product.material}</p></div>
       <span className="price">{formatPrice(product.price)}</span>
     </div>
     <button className="text-button add-button" onClick={() => addToCart(product)}><Plus size={15} /> Añadir a la bolsa</button>
+    {zoomOpen && <ImageZoom src={imageUrl(product.image, 1400)} alt={product.name} label={`${product.name} · ${formatPrice(product.price)}`} onClose={() => setZoomOpen(false)} />}
   </article>;
 }
 
@@ -82,9 +105,12 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
     const lineTotal = product.price == null ? 'precio por confirmar' : formatPrice(product.price * quantity);
     return `• ${product.name} (${product.category}) x${quantity} — ${lineTotal}`;
   }).join('\n');
-  const checkoutUrl = company.whatsapp
-    ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera hacer este pedido:\n\n${message}\n\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}\n\n¿Me confirmas disponibilidad, formas de pago y envío?`)}`
-    : '';
+  const orderText = `Hola, quisiera hacer este pedido:\n\n${message}\n\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}\n\n¿Me confirmas disponibilidad, formas de pago y envío?`;
+  const orderLinks = company.orderWhatsapps.map(({ number, label }) => ({
+    number,
+    label,
+    url: `https://wa.me/${number}?text=${encodeURIComponent(orderText)}`,
+  }));
   return <>
     {open && <button className="drawer-backdrop" aria-label="Cerrar carrito" onClick={onClose} />}
     <aside className={`cart-drawer ${open ? 'open' : ''}`} aria-label="Carrito de compras" aria-hidden={!open}>
@@ -95,7 +121,7 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
           <div className="cart-item-copy"><h3>{product.name}</h3><p>{formatPrice(product.price)}</p><div className="quantity-control"><button aria-label={`Reducir cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity - 1)}><Minus size={13} /></button><span>{quantity}</span><button aria-label={`Aumentar cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity + 1)}><Plus size={13} /></button></div></div>
           <button className="remove-button" onClick={() => removeProduct(product.id)}>Eliminar</button>
         </article>)}</div>
-        <div className="cart-summary"><div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div><p>El precio final, la disponibilidad y la forma de pago se confirman por WhatsApp.</p>{checkoutUrl ? <a className="button button-dark full-button" href={checkoutUrl} target="_blank" rel="noreferrer">Hacer pedido por WhatsApp <ArrowUpRight size={16} /></a> : <button className="button button-dark full-button" onClick={() => alert('El número de WhatsApp aún no está configurado. Añade VITE_WHATSAPP_NUMBER en el archivo .env.')}>Configurar WhatsApp <ArrowUpRight size={16} /></button>}</div>
+        <div className="cart-summary"><div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div><p>El precio final, la disponibilidad y la forma de pago se confirman por WhatsApp.</p><div className="order-links">{orderLinks.map(({ number, label, url }, index) => <a key={number} className={`button ${index === 0 ? 'button-dark' : 'button-outline'} full-button`} href={url} target="_blank" rel="noreferrer">Pedir a {label} <ArrowUpRight size={16} /></a>)}</div><p className="order-hint">El pedido se abre en WhatsApp con todos los detalles. Elige un número o envíalo a los dos.</p></div>
       </> : <div className="empty-cart"><ShoppingBag size={30} /><p>Tu bolsa está esperando una pieza especial.</p><button className="button button-outline" onClick={onClose}>Explorar colección</button></div>}
     </aside>
   </>;
@@ -278,7 +304,7 @@ function Home({ addToCart, favorites, onToggleFavorite }) {
         <a className="text-button" href="#coleccion">Ver colección <ArrowRight size={16} /></a>
       </section>
       <section className="collection-section section-wrap" id="coleccion">
-        <div className="section-heading"><div><span className="eyebrow">SELECCIÓN BELLADONA</span><h2>Piezas <em>especiales</em></h2></div><a href="#galeria" className="text-button desktop-link">Descubrir la galería <ArrowUpRight size={16} /></a></div>
+        <div className="section-heading"><div><span className="eyebrow">SELECCIÓN BELLADONA</span><h2>Piezas <em>especiales</em></h2></div>{galleryImages.length > 0 && <a href="#galeria" className="text-button desktop-link">Descubrir la galería <ArrowUpRight size={16} /></a>}</div>
         <div className="filter-row" aria-label="Filtrar por categoría">{categories.map((category) => <button className={filter === category ? 'active' : ''} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div>
         {filtered.length
           ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite={favorites.includes(product.id)} onToggleFavorite={onToggleFavorite} />)}</div>
@@ -376,11 +402,12 @@ function Favorites({ favorites, onToggleFavorite, addToCart }) {
 
 function ProductDetail({ addToCart, favorites, onToggleFavorite }) {
   const { id } = useParams();
+  const [zoomOpen, setZoomOpen] = useState(false);
   const product = products.find((item) => item.id === id);
   if (!product) return <main className="not-found"><span className="eyebrow">PIEZA NO ENCONTRADA</span><h1>Esta joya no está aquí.</h1><Link to="/" className="button button-dark"><ArrowLeft size={16} /> Volver al inicio</Link></main>;
   const isFavorite = favorites.includes(product.id);
   const whatsappUrl = company.whatsapp ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera consultar por ${product.name}.`)}` : '';
-  return <main className="product-detail section-wrap"><Link to="/#coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><img src={imageUrl(product.image, 1400)} alt={product.name} /></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>{product.availability || 'Consultar'}</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<button className="text-button fav-toggle" onClick={() => onToggleFavorite(product.id)}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button><p className="catalog-note">La disponibilidad final y la entrega se confirman por WhatsApp al hacer el pedido.</p></div></div></main>;
+  return <main className="product-detail section-wrap"><Link to="/#coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><button className="detail-zoom" aria-label={`Ampliar foto de ${product.name}`} onClick={() => setZoomOpen(true)}><img src={imageUrl(product.image, 1400)} alt={product.name} /><span className="detail-zoom-hint"><ZoomIn size={14} /> Ampliar foto</span></button></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>{product.availability || 'Consultar'}</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<button className="text-button fav-toggle" onClick={() => onToggleFavorite(product.id)}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button><p className="catalog-note">La disponibilidad final y la entrega se confirman por WhatsApp al hacer el pedido.</p></div></div>{zoomOpen && <ImageZoom src={imageUrl(product.image, 1400)} alt={product.name} label={`${product.name} · ${formatPrice(product.price)}`} onClose={() => setZoomOpen(false)} />}</main>;
 }
 
 export default function App() {

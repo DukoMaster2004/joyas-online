@@ -12,14 +12,13 @@ export const company = {
   instagram: '',
 };
 
-// Datos de muestra para enseñar cómo se configura el catálogo; sustituir antes de publicar.
 export const products = [
-  { id: 'anillo-luz', name: 'Anillo Luz', category: 'Anillos', description: 'Una pieza delicada para acompañar tus momentos especiales.', material: 'Por confirmar', price: null, image: 'photo-1605100804763-247f67b3557e' },
-  { id: 'collar-esencia', name: 'Collar Esencia', category: 'Collares', description: 'Un detalle sutil que aporta luz a cada estilo.', material: 'Por confirmar', price: null, image: 'photo-1599643478518-a784e5dc4c8f' },
-  { id: 'aretes-aurora', name: 'Aretes Aurora', category: 'Aretes', description: 'Diseño elegante para llevar de día o de noche.', material: 'Por confirmar', price: null, image: 'photo-1535632066927-ab7c9ab60908' },
-  { id: 'pulsera-dalia', name: 'Pulsera Dalia', category: 'Pulseras', description: 'Una silueta clásica con un acabado delicado.', material: 'Por confirmar', price: null, image: 'photo-1611652022419-a9419f74343d' },
-  { id: 'anillo-iris', name: 'Anillo Iris', category: 'Anillos', description: 'Una pieza de inspiración atemporal.', material: 'Por confirmar', price: null, image: 'photo-1515562141207-7a88fb7ce338' },
-  { id: 'collar-alba', name: 'Collar Alba', category: 'Collares', description: 'Un acento luminoso para combinar a tu manera.', material: 'Por confirmar', price: null, image: 'photo-1617038220319-276d3cfab638' },
+  { id: 'flor-de-cataleya', name: 'Flor de Cataleya', category: 'Collares', description: 'Collar dorado con dije de cataleya, elegante y delicado.', material: 'Por confirmar', price: 45, image: '/productos/flor-cataleya.jpg' },
+  { id: 'collar-corazon-rojo', name: 'Collar Corazón Rojo', category: 'Collares', description: 'Collar con dije de corazón rojo, un detalle lleno de significado.', material: 'Por confirmar', price: 40, image: '/productos/collar-corazon-rojo.jpg' },
+  { id: 'collar-perlita-plateado', name: 'Collar Perlita Plateado', category: 'Collares', description: 'Collar con perlita plateada, sutil y luminoso.', material: 'Por confirmar', price: 35, image: '/productos/collar-perlita-plateado.jpg' },
+  { id: 'collar-corazon-pequeno', name: 'Collar Corazón Pequeño', category: 'Collares', description: 'Collar con dije de corazón pequeño, perfecto para todos los días.', material: 'Por confirmar', price: 45, image: '/productos/collar-corazon-pequeno.jpg' },
+  { id: 'collar-piedra-negra', name: 'Collar Piedra Negra', category: 'Collares', description: 'Collar con piedra negra, un acento con mucho carácter.', material: 'Por confirmar', price: 38, image: '/productos/collar-piedra-negra.jpg' },
+  { id: 'pulseras-2-en-1', name: 'Pulseras 2 en 1', category: 'Pulseras', description: 'Set de dos pulseras para usar juntas o por separado.', material: 'Por confirmar', price: 40, image: '/productos/pulseras-2-en-1.jpg' },
 ];
 
 // Recursos de referencia independientes. Reemplazar por fotografías autorizadas de la marca.
@@ -56,10 +55,11 @@ export const videoSlots = Array.from({ length: 20 }, (_, index) => ({
 }));
 
 export const faqs = [
-  { question: '¿Qué tipos de joyas ofrecen?', answer: 'El catálogo de demostración incluye anillos, collares, aretes y pulseras. Consulta el catálogo para ver las piezas cargadas.' },
-  { question: '¿Cuánto cuesta un producto?', answer: 'Los precios todavía no están configurados. Escríbenos por WhatsApp para consultar el precio actualizado de una pieza.' },
-  { question: '¿Qué materiales utilizan?', answer: 'La información de materiales aún debe ser confirmada por BELLADONA. Contáctanos para recibir los detalles exactos de cada producto.' },
-  { question: '¿Realizan envíos?', answer: 'La cobertura y las condiciones de envío deben confirmarse directamente con BELLADONA. Podemos ayudarte a iniciar una consulta por WhatsApp.' },
+  { question: '¿Qué productos ofrecen?', answer: 'Tenemos cinco modelos de collares — Flor de Cataleya, Corazón Rojo, Perlita Plateado, Corazón Pequeño y Piedra Negra — y un set de Pulseras 2 en 1. Puedes verlos todos en la colección.' },
+  { question: '¿Cuánto cuestan?', answer: 'Los precios van de S/ 35 a S/ 45 según la pieza. Cada producto muestra su precio en el catálogo.' },
+  { question: '¿Cómo hago un pedido?', answer: 'Agrega las piezas al carrito y presiona "Hacer pedido por WhatsApp". Ahí se confirman la disponibilidad y las formas de pago.' },
+  { question: '¿Qué materiales utilizan?', answer: 'Los detalles de materiales de cada pieza se confirman por WhatsApp al hacer el pedido.' },
+  { question: '¿Realizan envíos?', answer: 'Las condiciones y el costo de envío se coordinan por WhatsApp al confirmar tu pedido.' },
 ];
 
 export const formatPrice = (price) =>
@@ -67,5 +67,7 @@ export const formatPrice = (price) =>
     ? 'Consultar precio'
     : new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(price);
 
-export const imageUrl = (imageId, width = 900) =>
-  `https://images.unsplash.com/${imageId}?auto=format&fit=crop&w=${width}&q=82`;
+export const imageUrl = (image, width = 900) =>
+  image.startsWith('/') || image.startsWith('http')
+    ? image
+    : `https://images.unsplash.com/${image}?auto=format&fit=crop&w=${width}&q=82`;

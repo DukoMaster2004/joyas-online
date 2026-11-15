@@ -101,6 +101,27 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
   </>;
 }
 
+function renderChatText(text) {
+  const lines = text.replace(/^[-*]\s+/gm, '• ').split('\n');
+  return lines.map((line, lineIndex) => {
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).filter(Boolean);
+    return (
+      <span key={lineIndex}>
+        {lineIndex > 0 && <br />}
+        {parts.map((part, partIndex) => {
+          if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+            return <strong key={partIndex}>{part.slice(2, -2)}</strong>;
+          }
+          if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+            return <em key={partIndex}>{part.slice(1, -1)}</em>;
+          }
+          return <span key={partIndex}>{part}</span>;
+        })}
+      </span>
+    );
+  });
+}
+
 function Assistant() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
@@ -113,6 +134,7 @@ function Assistant() {
     fetch('/api/chat/status')
       .then((response) => {
         if (!response.ok) throw new Error(`No se pudo consultar la configuración del chat (HTTP ${response.status}).`);
+        if (!(response.headers.get('content-type') || '').includes('application/json')) throw new Error('La API no respondió en formato JSON.');
         return response.json();
       })
       .then((status) => {
@@ -130,13 +152,13 @@ function Assistant() {
       `${product.name} ${product.category}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(normalized),
     );
     if (normalized.includes('precio') || normalized.includes('cuesta') || normalized.includes('cuanto')) {
-      return 'Los precios todavía no están configurados. Consulta directamente con BELLADONA para conocer el precio actualizado.';
+      return `Los precios van de ${formatPrice(Math.min(...products.map((p) => p.price)))} a ${formatPrice(Math.max(...products.map((p) => p.price)))} según la pieza. Por ejemplo: ${products.map((p) => `${p.name} ${formatPrice(p.price)}`).join(', ')}.`;
     }
-    if (normalized.includes('producto') || normalized.includes('anillo') || normalized.includes('collar') || normalized.includes('arete') || normalized.includes('pulsera')) {
+    if (normalized.includes('producto') || normalized.includes('collar') || normalized.includes('pulsera')) {
       if (matchedProduct) {
-        return `${matchedProduct.name}: ${matchedProduct.description} El material y la disponibilidad deben confirmarse con BELLADONA.`;
+        return `${matchedProduct.name}: ${matchedProduct.description} Precio: ${formatPrice(matchedProduct.price)}. La disponibilidad se confirma por WhatsApp.`;
       }
-      return `En el catálogo de demostración aparecen: ${products.map((product) => `${product.name} (${product.category})`).join(', ')}. Confirma la disponibilidad directamente con BELLADONA.`;
+      return `En la colección tenemos: ${products.map((product) => `${product.name} ${formatPrice(product.price)}`).join(', ')}. Todos se piden por WhatsApp.`;
     }
     const faq = faqs.find((item) => {
       const terms = item.question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\W+/).filter((term) => term.length > 4);
@@ -148,7 +170,7 @@ function Assistant() {
   async function send(text = draft) {
     const question = text.trim();
     if (!question || loading) return;
-    if (localMode === true) {
+    if (localMode !== false) {
       setMessages((items) => [...items, {
         role: 'user',
         text: question,
@@ -199,15 +221,21 @@ function Assistant() {
       }
       setMessages((items) => [...items, { role: 'assistant', text: result.reply.trim() }]);
     } catch (error) {
-      setChatError(error instanceof Error ? error.message : 'No se pudo enviar la consulta a Gemini.');
+      if (error instanceof TypeError) {
+        setLocalMode(true);
+        setMessages((items) => [...items, { role: 'assistant', text: answerLocally(question) }]);
+        setChatError('');
+      } else {
+        setChatError(error instanceof Error ? error.message : 'No se pudo enviar la consulta. Inténtalo de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
   };
   return <>
     {open && <section className="chat-panel" aria-label="Chat con asistente BELLADONA">
-      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>{localMode === true ? 'Modo local · Gemini sin configurar' : localMode === false ? 'Con tecnología Gemini' : 'Conectando…'}</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
-      <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{message.text}</div>)}
+      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>{localMode === true ? 'Modo local · información de la página' : localMode === false ? 'Con tecnología Gemini' : 'Conectando…'}</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
+      <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{renderChatText(message.text)}</div>)}
         {loading && <div className="chat-message assistant chat-loading" role="status">Gemini está escribiendo…</div>}
         {chatError && <p className="chat-error" role="alert">{chatError}</p>}
         {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)} disabled={loading}>{q}</button>)}</div>}
@@ -237,7 +265,7 @@ function Hero() {
 function Home({ addToCart }) {
   const [filter, setFilter] = useState('Todos');
   const [activeImage, setActiveImage] = useState(null);
-  const categories = ['Todos', 'Anillos', 'Collares', 'Aretes', 'Pulseras', 'Conjuntos', 'Colecciones especiales', 'Regalos'];
+  const categories = ['Todos', ...new Set(products.map((p) => p.category))];
   const filtered = filter === 'Todos' ? products : products.filter((p) => p.category === filter);
   const displayedVideos = videoSlots.filter((video) => video.src);
   return <>
@@ -255,7 +283,7 @@ function Home({ addToCart }) {
         {filtered.length
           ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} />)}</div>
           : <p className="catalog-empty">Todavía no hay piezas confirmadas en esta categoría.</p>}
-        <p className="catalog-note">Catálogo de demostración. Confirma disponibilidad, materiales y precios con BELLADONA.</p>
+        <p className="catalog-note">Precios en soles. Confirma disponibilidad y formas de pago con BELLADONA por WhatsApp.</p>
       </section>
       <section className="story-section" id="nosotros">
         <div className="story-image"><img src={imageUrl('photo-1515562141207-7a88fb7ce338', 1200)} alt="Composición editorial para una historia de joyería" loading="lazy" /></div>

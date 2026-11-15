@@ -16,7 +16,7 @@ function readStorage(key, fallback) {
   }
 }
 
-function Header({ dark, setDark, cartCount, openCart }) {
+function Header({ dark, setDark, cartCount, favCount, openCart }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -49,6 +49,7 @@ function Header({ dark, setDark, cartCount, openCart }) {
       <div className="header-actions">
         <button className="icon-button" aria-label="Buscar productos" onClick={() => setSearchOpen(!searchOpen)}><Search /></button>
         <button className="icon-button theme-toggle" aria-label={dark ? 'Activar tema claro' : 'Activar tema oscuro'} onClick={() => setDark(!dark)}>{dark ? <Sun /> : <Moon />}</button>
+        <button className="icon-button" aria-label={`Ver favoritos, ${favCount} productos`} onClick={() => navigate('/favoritos')}><Heart />{favCount > 0 && <span className="bag-count">{favCount}</span>}</button>
         <button className="icon-button bag-button" aria-label={`Abrir carrito, ${cartCount} productos`} onClick={openCart}><ShoppingBag /><span className="bag-count">{cartCount}</span></button>
       </div>
       {searchOpen && <div className="search-panel">
@@ -59,14 +60,13 @@ function Header({ dark, setDark, cartCount, openCart }) {
   );
 }
 
-function ProductCard({ product, addToCart }) {
-  const [saved, setSaved] = useState(false);
+function ProductCard({ product, addToCart, isFavorite, onToggleFavorite }) {
   return <article className="product-card">
     <Link className="product-image" to={`/producto/${product.id}`}>
       <img src={imageUrl(product.image)} alt={product.name} loading="lazy" />
       <span className="product-category">{product.category}</span>
     </Link>
-    <button className={`save-product ${saved ? 'saved' : ''}`} aria-label={saved ? 'Quitar de favoritos' : 'Guardar en favoritos'} onClick={() => setSaved(!saved)}><Heart size={17} fill={saved ? 'currentColor' : 'none'} /></button>
+    <button className={`save-product ${isFavorite ? 'saved' : ''}`} aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Guardar ${product.name} en favoritos`} onClick={() => onToggleFavorite(product.id)}><Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} /></button>
     <div className="product-info">
       <div><h3><Link to={`/producto/${product.id}`}>{product.name}</Link></h3><p>{product.material}</p></div>
       <span className="price">{formatPrice(product.price)}</span>
@@ -262,7 +262,7 @@ function Hero() {
   </section>;
 }
 
-function Home({ addToCart }) {
+function Home({ addToCart, favorites, onToggleFavorite }) {
   const [filter, setFilter] = useState('Todos');
   const [activeImage, setActiveImage] = useState(null);
   const categories = ['Todos', ...new Set(products.map((p) => p.category))];
@@ -281,7 +281,7 @@ function Home({ addToCart }) {
         <div className="section-heading"><div><span className="eyebrow">SELECCIÓN BELLADONA</span><h2>Piezas <em>especiales</em></h2></div><a href="#galeria" className="text-button desktop-link">Descubrir la galería <ArrowUpRight size={16} /></a></div>
         <div className="filter-row" aria-label="Filtrar por categoría">{categories.map((category) => <button className={filter === category ? 'active' : ''} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div>
         {filtered.length
-          ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} />)}</div>
+          ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite={favorites.includes(product.id)} onToggleFavorite={onToggleFavorite} />)}</div>
           : <p className="catalog-empty">Todavía no hay piezas confirmadas en esta categoría.</p>}
         <p className="catalog-note">Precios en soles. Confirma disponibilidad y formas de pago con BELLADONA por WhatsApp.</p>
       </section>
@@ -289,11 +289,11 @@ function Home({ addToCart }) {
         <div className="story-image"><img src={imageUrl('photo-1515562141207-7a88fb7ce338', 1200)} alt="Composición editorial para una historia de joyería" loading="lazy" /></div>
         <div className="story-copy"><span className="eyebrow">DE UN SUEÑO A TU COLECCIÓN</span><h2>Nuestra <em>historia</em></h2><p>{company.story}</p><p>Creemos que cada joya representa un momento especial, una emoción y una forma única de expresar la personalidad de quien la lleva.</p><a href="#contacto" className="text-button">Conócenos <ArrowRight size={16} /></a><span className="story-mark">B.</span></div>
       </section>
-      <section className="gallery-section section-wrap" id="galeria">
+      {galleryImages.length > 0 && <section className="gallery-section section-wrap" id="galeria">
         <div className="section-heading"><div><span className="eyebrow">INSPIRACIÓN BELLADONA</span><h2>Un mundo de <em>detalles</em></h2></div><p>Momentos, texturas y piezas que inspiran.</p></div>
         <div className="gallery-grid">{galleryImages.map((image, index) => <button className={`gallery-tile gallery-tile-${index + 1}`} key={image.id} onClick={() => setActiveImage(image)} aria-label={`Ampliar ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /><span>{image.category} <ArrowUpRight size={14} /></span></button>)}</div>
         <p className="catalog-note">Las imágenes son referencias visuales temporales. Sustitúyelas por fotografías propias o autorizadas antes de publicar.</p>
-      </section>
+      </section>}
       <section className="video-section">
         <div className="video-copy"><span className="eyebrow">EN MOVIMIENTO</span><h2>La belleza está<br /><em>en los detalles.</em></h2><p>Próximamente, conoce de cerca nuestras piezas y colecciones.</p></div>
         <div className="video-placeholder">{displayedVideos.length ? displayedVideos.slice(0, 3).map((video) => <video key={video.id} controls preload="none" poster={video.poster}><source src={video.src} type="video/mp4" /></video>) : <div className="video-empty"><div className="play-mark">B.</div><span>20 espacios listos para tus videos</span><small>Los videos se mostrarán al agregar archivos autorizados en src/data.js.</small></div>}</div>
@@ -363,21 +363,38 @@ function Footer() {
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} BELLADONA JOYERÍA</span><span>Hecho con dedicación en Perú</span><a href="#inicio">Volver arriba ↑</a></div></footer>;
 }
 
-function ProductDetail({ addToCart }) {
+function Favorites({ favorites, onToggleFavorite, addToCart }) {
+  const items = products.filter((product) => favorites.includes(product.id));
+  return <main className="section-wrap favorites-page">
+    <span className="eyebrow">TUS PIEZAS GUARDADAS</span>
+    <h1>Tus favoritos <em>({items.length})</em></h1>
+    {items.length
+      ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite onToggleFavorite={onToggleFavorite} />)}</div>
+      : <div className="favorites-empty"><Heart size={30} /><p>Aquí aparecerán las joyas que guardas con el corazón.</p><Link to="/#coleccion" className="button button-dark">Explorar la colección <ArrowRight size={16} /></Link></div>}
+  </main>;
+}
+
+function ProductDetail({ addToCart, favorites, onToggleFavorite }) {
   const { id } = useParams();
   const product = products.find((item) => item.id === id);
   if (!product) return <main className="not-found"><span className="eyebrow">PIEZA NO ENCONTRADA</span><h1>Esta joya no está aquí.</h1><Link to="/" className="button button-dark"><ArrowLeft size={16} /> Volver al inicio</Link></main>;
+  const isFavorite = favorites.includes(product.id);
   const whatsappUrl = company.whatsapp ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera consultar por ${product.name}.`)}` : '';
-  return <main className="product-detail section-wrap"><Link to="/#coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><img src={imageUrl(product.image, 1400)} alt={product.name} /></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>Consultar</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<p className="catalog-note">Producto de muestra. Confirma la información comercial antes de realizar un pedido.</p></div></div></main>;
+  return <main className="product-detail section-wrap"><Link to="/#coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><img src={imageUrl(product.image, 1400)} alt={product.name} /></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>{product.availability || 'Consultar'}</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<button className="text-button fav-toggle" onClick={() => onToggleFavorite(product.id)}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button><p className="catalog-note">La disponibilidad final y la entrega se confirman por WhatsApp al hacer el pedido.</p></div></div></main>;
 }
 
 export default function App() {
   const [dark, setDark] = useState(() => readStorage('belladona-theme', false));
   const [cart, setCart] = useState(() => readStorage('belladona-cart', []));
+  const [favorites, setFavorites] = useState(() => readStorage('belladona-favorites', []));
   const [cartOpen, setCartOpen] = useState(false);
   useEffect(() => { localStorage.setItem('belladona-theme', JSON.stringify(dark)); }, [dark]);
   useEffect(() => { localStorage.setItem('belladona-cart', JSON.stringify(cart)); }, [cart]);
+  useEffect(() => { localStorage.setItem('belladona-favorites', JSON.stringify(favorites)); }, [favorites]);
   const cartCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
+  function toggleFavorite(id) {
+    setFavorites((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]);
+  }
   function addToCart(product) {
     setCart((items) => {
       const existing = items.find((item) => item.product.id === product.id);
@@ -393,10 +410,11 @@ export default function App() {
   }
   function removeProduct(id) { setCart((items) => items.filter((item) => item.product.id !== id)); }
   return <div className={`app ${dark ? 'dark-theme' : ''}`} id="inicio">
-    <Header dark={dark} setDark={setDark} cartCount={cartCount} openCart={() => setCartOpen(true)} />
+    <Header dark={dark} setDark={setDark} cartCount={cartCount} favCount={favorites.length} openCart={() => setCartOpen(true)} />
     <Routes>
-      <Route path="/" element={<Home addToCart={addToCart} />} />
-      <Route path="/producto/:id" element={<><ProductDetail addToCart={addToCart} /><Footer /></>} />
+      <Route path="/" element={<Home addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+      <Route path="/favoritos" element={<><Favorites favorites={favorites} onToggleFavorite={toggleFavorite} addToCart={addToCart} /><Footer /></>} />
+      <Route path="/producto/:id" element={<><ProductDetail addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} /><Footer /></>} />
       <Route path="*" element={<main className="not-found"><span className="eyebrow">404</span><h1>Página no encontrada</h1><Link to="/" className="button button-dark">Volver al inicio</Link></main>} />
     </Routes>
     <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} updateQuantity={updateQuantity} removeProduct={removeProduct} />

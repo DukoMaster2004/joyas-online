@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Heart,
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Facebook, Heart,
   Instagram, Menu, MessageCircle, Minus, Moon, Plus, Search, ShoppingBag,
   Sun, X, ZoomIn,
 } from 'lucide-react';
-import { company, faqs, formatPrice, galleryImages, imageUrl, products, videoSlots } from './data';
+import { company, faqs, formatPrice, galleryImages, imageUrl, products, socialPosts, socialProfiles, videoSlots } from './data';
 
 function readStorage(key, fallback) {
   try {
@@ -33,6 +33,7 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
     ['Colección', '/#coleccion'],
     ['Nuestra historia', '/#nosotros'],
     ['Galería', '/#galeria'],
+    ['Redes sociales', '/#redes'],
     ['Contacto', '/#contacto'],
   ];
 
@@ -288,6 +289,25 @@ function Hero() {
   </section>;
 }
 
+function SocialSection() {
+  return <section className="social-section section-wrap" id="redes">
+    <div className="section-heading"><div><span className="eyebrow">SÍGUENOS</span><h2>BELLADONA <em>en redes</em></h2></div><p>Novedades, colecciones y detalles de nuestras piezas en Instagram y Facebook.</p></div>
+    <div className="social-profiles">{socialProfiles.map((profile) => {
+      const Icon = profile.id === 'instagram' ? Instagram : Facebook;
+      return <a className="social-profile" key={profile.id} href={profile.url} target="_blank" rel="noreferrer">
+        <span className="social-capture"><img src={profile.capture} alt={profile.captureAlt} loading="lazy" /></span>
+        <span className="social-copy"><span className={`social-icon ${profile.id}`}><Icon size={17} /></span><span className="social-name"><strong>{profile.name}</strong><small>{profile.handle}</small></span><span className="social-link-label">Ver perfil <ArrowUpRight size={14} /></span></span>
+      </a>;
+    })}</div>
+    <div className="social-posts-heading"><span className="eyebrow">PUBLICACIONES</span><h3>Lo último que compartimos</h3></div>
+    <div className="social-posts">{socialPosts.map((post) => <a className="social-post" key={post.id} href={post.url} target="_blank" rel="noreferrer">
+      <img src={post.image} alt={post.caption} loading="lazy" />
+      <span className="social-post-meta">{post.network === 'Instagram' ? <Instagram size={13} /> : <Facebook size={13} />}<span>{post.caption}</span></span>
+    </a>)}</div>
+    <p className="catalog-note">Toca una publicación para verla en su red social.</p>
+  </section>;
+}
+
 function Home({ addToCart, favorites, onToggleFavorite }) {
   const [filter, setFilter] = useState('Todos');
   const [activeImage, setActiveImage] = useState(null);
@@ -320,6 +340,7 @@ function Home({ addToCart, favorites, onToggleFavorite }) {
         <div className="gallery-grid">{galleryImages.map((image, index) => <button className={`gallery-tile gallery-tile-${index + 1}`} key={image.id} onClick={() => setActiveImage(image)} aria-label={`Ampliar ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /><span>{image.category} <ArrowUpRight size={14} /></span></button>)}</div>
         <p className="catalog-note">Las imágenes son referencias visuales temporales. Sustitúyelas por fotografías propias o autorizadas antes de publicar.</p>
       </section>}
+      <SocialSection />
       <section className="video-section">
         <div className="video-copy"><span className="eyebrow">EN MOVIMIENTO</span><h2>La belleza está<br /><em>en los detalles.</em></h2><p>Próximamente, conoce de cerca nuestras piezas y colecciones.</p></div>
         <div className="video-placeholder">{displayedVideos.length ? displayedVideos.slice(0, 3).map((video) => <video key={video.id} controls preload="none" poster={video.poster}><source src={video.src} type="video/mp4" /></video>) : <div className="video-empty"><div className="play-mark">B.</div><span>20 espacios listos para tus videos</span><small>Los videos se mostrarán al agregar archivos autorizados en src/data.js.</small></div>}</div>
@@ -363,6 +384,7 @@ function Contact() {
       <div className="contact-detail"><span>WHATSAPP</span><a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer"><strong>+51 907 244 112</strong></a></div>
       {company.email && <div className="contact-detail"><span>CORREO</span><strong>{company.email}</strong></div>}
       <div className="contact-detail"><span>CANALES DE WHATSAPP</span><a href={company.whatsappChannel} target="_blank" rel="noreferrer"><strong>Canal de WhatsApp</strong></a><a href={company.whatsappGroup} target="_blank" rel="noreferrer"><strong>Grupo de WhatsApp</strong></a></div>
+      <div className="contact-detail"><span>REDES SOCIALES</span><a href={company.instagram} target="_blank" rel="noreferrer"><strong>Instagram</strong></a><a href={company.facebook} target="_blank" rel="noreferrer"><strong>Facebook</strong></a></div>
       {company.instagram && <div className="contact-detail"><span>INSTAGRAM</span><a href={company.instagram} target="_blank" rel="noreferrer"><strong>Instagram</strong></a></div>}
       {company.whatsapp && <a className="text-button" href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">Escríbenos por WhatsApp <ArrowUpRight size={15} /></a>}
     </div>
@@ -383,8 +405,8 @@ function Contact() {
 function Footer() {
   return <footer className="site-footer"><div className="footer-main">
     <div className="footer-brand"><Link to="/" className="wordmark"><span>BELLADONA</span><small>JOYERÍA</small></Link><p>Elegancia que refleja tu esencia.</p></div>
-    <div className="footer-links"><span className="eyebrow">EXPLORA</span><a href="/#coleccion">Colección</a><a href="/#nosotros">Nuestra historia</a><a href="/#galeria">Galería</a><a href="/#contacto">Contacto</a></div>
-    <div className="footer-links"><span className="eyebrow">CONTACTO</span>{company.email && <span>{company.email}</span>}{company.whatsapp && <a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">WhatsApp +51 907 244 112</a>}<a href={company.whatsappChannel} target="_blank" rel="noreferrer">Canal de WhatsApp</a><a href={company.whatsappGroup} target="_blank" rel="noreferrer">Grupo de WhatsApp</a>{company.instagram && <a href={company.instagram} target="_blank" rel="noreferrer"><Instagram size={15} /> Instagram</a>}</div>
+    <div className="footer-links"><span className="eyebrow">EXPLORA</span><a href="/#coleccion">Colección</a><a href="/#nosotros">Nuestra historia</a><a href="/#galeria">Galería</a><a href="/#redes">Redes sociales</a><a href="/#contacto">Contacto</a></div>
+    <div className="footer-links"><span className="eyebrow">CONTACTO</span>{company.email && <span>{company.email}</span>}{company.whatsapp && <a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">WhatsApp +51 907 244 112</a>}<a href={company.whatsappChannel} target="_blank" rel="noreferrer">Canal de WhatsApp</a><a href={company.whatsappGroup} target="_blank" rel="noreferrer">Grupo de WhatsApp</a>{company.instagram && <a href={company.instagram} target="_blank" rel="noreferrer"><Instagram size={15} /> Instagram</a>}{company.facebook && <a href={company.facebook} target="_blank" rel="noreferrer"><Facebook size={15} /> Facebook</a>}</div>
     <div className="footer-signoff">B.<span>JOYAS PARA ATESORAR</span></div>
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} BELLADONA JOYERÍA</span><span>Hecho con dedicación en Perú</span><a href="#inicio">Volver arriba ↑</a></div></footer>;
 }

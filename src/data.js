@@ -13,8 +13,37 @@ export const company = {
   whatsappChannel: 'https://whatsapp.com/channel/0029VbFzH7A0lwgymnBDUz3B',
   whatsappGroup: 'https://chat.whatsapp.com/Fvdrc9FN3PuDImuQoXvEn9',
   email: viteEnv.VITE_CONTACT_EMAIL || '',
-  instagram: '',
+  instagram: 'https://www.instagram.com/belladonajoyas/',
+  facebook: 'https://www.facebook.com/people/Joya-Belladonas/61596089676578/',
 };
+
+export const socialProfiles = [
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    handle: '@belladonajoyas',
+    url: 'https://www.instagram.com/belladonajoyas/',
+    capture: '/redes/instagram-captura.jpg',
+    captureAlt: 'Captura del perfil de Instagram de BELLADONA JOYERÍA',
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    handle: 'Joya Belladonas',
+    url: 'https://www.facebook.com/people/Joya-Belladonas/61596089676578/',
+    capture: '/redes/facebook-captura.jpg',
+    captureAlt: 'Captura de la página de Facebook de BELLADONA JOYERÍA',
+  },
+];
+
+export const socialPosts = [
+  { id: 'ig-1', network: 'Instagram', image: '/redes/instagram-1.jpg', caption: 'Set de 7 collares, infinitas posibilidades', url: 'https://www.instagram.com/belladonajoyas/' },
+  { id: 'ig-2', network: 'Instagram', image: '/redes/instagram-2.jpg', caption: 'Nueva colección de aretes dorados', url: 'https://www.instagram.com/belladonajoyas/' },
+  { id: 'fb-1', network: 'Facebook', image: '/redes/facebook-publicacion.jpg', caption: 'Elegancia en cada detalle: set de 7 collares', url: 'https://www.facebook.com/permalink.php?story_fbid=pfbid0fJ7X2gLjjD5tw4XDnR27581TBYB8ZQJZqFLXmiWied9TmDA8KfCApbMVdsVfRvmUl&id=61596089676578' },
+  { id: 'ig-3', network: 'Instagram', image: '/redes/instagram-3.jpg', caption: 'Joyitas que necesitas: flores, argollas y corazones', url: 'https://www.instagram.com/belladonajoyas/' },
+  { id: 'ig-4', network: 'Instagram', image: '/redes/instagram-4.jpg', caption: 'Elegancia que define tu estilo', url: 'https://www.instagram.com/belladonajoyas/' },
+  { id: 'ig-5', network: 'Instagram', image: '/redes/instagram-5.jpg', caption: 'Nueva colección BELLADONA Joyería', url: 'https://www.instagram.com/belladonajoyas/' },
+];
 
 export const products = [
   { id: 'flor-de-cataleya', name: 'Flor de Cataleya', category: 'Collares', description: 'Collar dorado con dije de cataleya en tonos tornasol y bolitas deslizantes en la cadena.', material: 'Metal dorado con dije tornasol', availability: 'Disponible', price: 45, image: '/productos/flor-cataleya.jpg' },

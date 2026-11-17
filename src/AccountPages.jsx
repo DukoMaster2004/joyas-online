@@ -121,9 +121,7 @@ export function HistoryPage({ favorites, onToggleFavorite, addToCart, cart, upda
       setLoading(false);
     }, (caught) => {
       console.error('Could not load Belladona order history:', caught);
-      setError(caught.code === 'permission-denied'
-        ? 'Firestore no permite leer el historial. Revisa las reglas de seguridad documentadas en la configuración.'
-        : 'No pudimos cargar el historial. Revisa tu conexión e inténtalo otra vez.');
+      setError('No pudimos cargar tu historial. Inténtalo de nuevo más tarde.');
       setLoading(false);
     });
   }, [user]);
@@ -195,9 +193,6 @@ export function HistoryPage({ favorites, onToggleFavorite, addToCart, cart, upda
           <div className="order-total"><span>Total referencial</span><strong>{formatPrice(order.total)}</strong></div>
         </article>)}</div>
         : <div className="history-empty">
-          <ShoppingBag size={30} />
-          <h2>Aún no tienes pedidos guardados</h2>
-          <p>Cuando prepares un pedido para WhatsApp, lo encontrarás aquí.</p>
           <Link to="/#coleccion" className="button button-dark">Explorar colección <ArrowRight size={16} /></Link>
         </div>}
     <SavedLists

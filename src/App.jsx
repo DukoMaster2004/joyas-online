@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Facebook, Heart,
-  Instagram, Menu, MessageCircle, Minus, Moon, Plus, Search, ShoppingBag,
-  Sun, X, ZoomIn,
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Facebook, Heart, History, LogIn,
+  Instagram, LoaderCircle, Menu, MessageCircle, Minus, Moon, Plus, Search,
+  ShoppingBag, Sun, UserRound, X, ZoomIn,
 } from 'lucide-react';
+import { HistoryPage, SignInPage } from './AccountPages';
+import { useAuth } from './auth';
 import { company, faqs, formatPrice, galleryImages, imageUrl, products, socialPosts, socialProfiles, videoSlots } from './data';
+import { saveChatConversation, saveOrderToHistory, subscribeChatHistory } from './history';
 
 function readStorage(key, fallback) {
   try {
@@ -20,6 +23,7 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const { user } = useAuth();
   const navigate = useNavigate();
   const matches = query.trim()
     ? products.filter((p) => `${p.name} ${p.category} ${p.description}`.toLowerCase().includes(query.toLowerCase()))
@@ -46,8 +50,13 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
       </Link>
       <nav className={`main-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegación principal">
         {nav.map(([label, href]) => <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>)}
+        <Link className="nav-account" to={user ? '/historial' : '/ingresar'} onClick={() => setMenuOpen(false)}>{user ? 'Mi historial' : 'Iniciar sesión con Google'}</Link>
       </nav>
       <div className="header-actions">
+        <Link className="account-link" to={user ? '/historial' : '/ingresar'} aria-label={user ? 'Ver mi historial' : 'Iniciar sesión con Google'}>
+          {user?.photoURL ? <img src={user.photoURL} alt="" /> : user ? <UserRound /> : <LogIn />}
+          <span>{user ? 'Mi historial' : 'Iniciar sesión'}</span>
+        </Link>
         <button className="icon-button" aria-label="Buscar productos" onClick={() => setSearchOpen(!searchOpen)}><Search /></button>
         <button className="icon-button theme-toggle" aria-label={dark ? 'Activar tema claro' : 'Activar tema oscuro'} onClick={() => setDark(!dark)}>{dark ? <Sun /> : <Moon />}</button>
         <button className="icon-button" aria-label={`Ver favoritos, ${favCount} productos`} onClick={() => navigate('/favoritos')}><Heart />{favCount > 0 && <span className="bag-count">{favCount}</span>}</button>
@@ -100,18 +109,41 @@ function ProductCard({ product, addToCart, isFavorite, onToggleFavorite }) {
 }
 
 function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
+  const { user } = useAuth();
+  const [preparedOrder, setPreparedOrder] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
   const subtotal = cart.reduce((sum, item) => sum + (item.product.price || 0) * item.quantity, 0);
   const unknownPrice = cart.some((item) => item.product.price == null);
+  useEffect(() => {
+    setPreparedOrder(null);
+    setOrderError('');
+  }, [cart, user?.uid]);
+
   const message = cart.map(({ product, quantity }) => {
     const lineTotal = product.price == null ? 'precio por confirmar' : formatPrice(product.price * quantity);
     return `• ${product.name} (${product.category}) x${quantity} — ${lineTotal}`;
   }).join('\n');
-  const orderText = `Hola, quisiera hacer este pedido:\n\n${message}\n\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}\n\n¿Me confirmas disponibilidad, formas de pago y envío?`;
+  const orderText = `Hola, quisiera hacer este pedido${preparedOrder ? ` (${preparedOrder.code})` : ''}:\n\n${message}\n\nTotal referencial: ${formatPrice(unknownPrice ? null : subtotal)}\n\n¿Me confirmas disponibilidad, formas de pago y envío?`;
   const orderLinks = company.orderWhatsapps.map(({ number, label }) => ({
     number,
     label,
     url: `https://wa.me/${number}?text=${encodeURIComponent(orderText)}`,
   }));
+  async function prepareOrder() {
+    if (!user || !cart.length || savingOrder) return;
+    setSavingOrder(true);
+    setOrderError('');
+    try {
+      setPreparedOrder(await saveOrderToHistory(user, cart));
+    } catch (error) {
+      console.error('Could not save Belladona order:', error);
+      setOrderError('No pudimos guardar tu pedido. Revisa la conexión y las reglas de Firestore e inténtalo otra vez.');
+    } finally {
+      setSavingOrder(false);
+    }
+  }
+
   return <>
     {open && <button className="drawer-backdrop" aria-label="Cerrar carrito" onClick={onClose} />}
     <aside className={`cart-drawer ${open ? 'open' : ''}`} aria-label="Carrito de compras" aria-hidden={!open}>
@@ -122,7 +154,19 @@ function CartDrawer({ open, onClose, cart, updateQuantity, removeProduct }) {
           <div className="cart-item-copy"><h3>{product.name}</h3><p>{formatPrice(product.price)}</p><div className="quantity-control"><button aria-label={`Reducir cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity - 1)}><Minus size={13} /></button><span>{quantity}</span><button aria-label={`Aumentar cantidad de ${product.name}`} onClick={() => updateQuantity(product.id, quantity + 1)}><Plus size={13} /></button></div></div>
           <button className="remove-button" onClick={() => removeProduct(product.id)}>Eliminar</button>
         </article>)}</div>
-        <div className="cart-summary"><div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div><p>El precio final, la disponibilidad y la forma de pago se confirman por WhatsApp.</p><div className="order-links">{orderLinks.map(({ number, label, url }, index) => <a key={number} className={`button ${index === 0 ? 'button-dark' : 'button-outline'} full-button`} href={url} target="_blank" rel="noreferrer">Pedir a {label} <ArrowUpRight size={16} /></a>)}</div><p className="order-hint">El pedido se abre en WhatsApp con todos los detalles. Elige un número o envíalo a los dos.</p></div>
+        <div className="cart-summary">
+          <div className="summary-line"><span>Subtotal</span><strong>{unknownPrice ? 'Por confirmar' : formatPrice(subtotal)}</strong></div>
+          <p>El precio final, la disponibilidad y la forma de pago se confirman por WhatsApp.</p>
+          {user && !preparedOrder && <button className="button button-dark full-button" type="button" onClick={prepareOrder} disabled={savingOrder}>
+            {savingOrder ? <LoaderCircle className="spin" size={16} /> : <History size={16} />}
+            {savingOrder ? 'Guardando pedido…' : 'Guardar pedido y continuar'}
+          </button>}
+          {preparedOrder && <p className="order-saved" role="status">Pedido {preparedOrder.code} guardado en tu historial. Ahora elige a qué WhatsApp enviarlo.</p>}
+          {orderError && <p className="account-error" role="alert">{orderError}</p>}
+          {(!user || preparedOrder) && <div className="order-links">{orderLinks.map(({ number, label, url }, index) => <a key={number} className={`button ${index === 0 ? 'button-dark' : 'button-outline'} full-button`} href={url} target="_blank" rel="noreferrer">Pedir a {label} <ArrowUpRight size={16} /></a>)}</div>}
+          {!user && <p className="order-hint">Puedes continuar sin cuenta. <Link to="/ingresar?next=/historial">Inicia sesión con Google</Link> para guardar el pedido en tu historial.</p>}
+          {user && preparedOrder && <p className="order-hint">El pedido se abre en WhatsApp con todos los detalles. Elige un número o envíalo a los dos.</p>}
+        </div>
       </> : <div className="empty-cart"><ShoppingBag size={30} /><p>Tu bolsa está esperando una pieza especial.</p><button className="button button-outline" onClick={onClose}>Explorar colección</button></div>}
     </aside>
   </>;
@@ -156,6 +200,12 @@ function Assistant() {
   const [chatError, setChatError] = useState('');
   const [localMode, setLocalMode] = useState(null);
   const [messages, setMessages] = useState([{ role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' }]);
+  const [conversationId, setConversationId] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const { user } = useAuth();
+
   useEffect(() => {
     let active = true;
     fetch('/api/chat/status')
@@ -172,6 +222,28 @@ function Assistant() {
       });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+      setMessages([{ role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' }]);
+      setConversationId(null);
+      setShowHistory(false);
+      setChatError('');
+      if (!user) {
+        setChatHistory([]);
+        setHistoryLoading(false);
+        return undefined;
+      }
+
+      setHistoryLoading(true);
+      return subscribeChatHistory(user.uid, (conversations) => {
+        setChatHistory(conversations);
+        setHistoryLoading(false);
+      }, (error) => {
+        console.error('Could not load Belladona chat history:', error);
+        setChatError('No pudimos cargar tu historial de conversaciones. Revisa las reglas de Firestore.');
+        setHistoryLoading(false);
+      });
+  }, [user?.uid]);
 
   function answerLocally(question) {
     const normalized = question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -197,18 +269,7 @@ function Assistant() {
   async function send(text = draft) {
     const question = text.trim();
     if (!question || loading) return;
-    if (localMode !== false) {
-      setMessages((items) => [...items, {
-        role: 'user',
-        text: question,
-      }, {
-        role: 'assistant',
-        text: answerLocally(question),
-      }]);
-      setDraft('');
-      setChatError('');
-      return;
-    }
+    const userMessages = [...messages, { role: 'user', text: question }];
     const completedTurns = [];
     for (let index = 1; index < messages.length - 1; index += 2) {
       const userMessage = messages[index];
@@ -221,61 +282,112 @@ function Assistant() {
       }
     }
     const history = completedTurns.slice(-12);
-    setMessages((items) => [...items, { role: 'user', text: question }]);
+    setMessages(userMessages);
     setDraft('');
     setChatError('');
     setLoading(true);
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: question, history }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        if (result.code === 'GEMINI_NOT_CONFIGURED') {
-          setLocalMode(true);
-          setMessages((items) => [...items, {
-            role: 'assistant',
-            text: `Gemini no está configurado; te respondo con la información disponible en la página. ${answerLocally(question)}`,
-          }]);
-          return;
-        }
-        if ([429, 502, 504].includes(response.status)) {
-          setMessages((items) => [...items, {
-            role: 'assistant',
-            text: `${result.error || 'Gemini no está disponible temporalmente.'} Mientras tanto, ${answerLocally(question)}`,
-          }]);
-          return;
-        }
-        throw new Error(result.error || `No se pudo consultar Gemini (HTTP ${response.status}).`);
-      }
-      if (typeof result.reply !== 'string' || !result.reply.trim()) {
-        throw new Error('Gemini devolvió una respuesta vacía. Inténtalo de nuevo.');
-      }
-      setMessages((items) => [...items, { role: 'assistant', text: result.reply.trim() }]);
-    } catch (error) {
-      if (error instanceof TypeError) {
-        setLocalMode(true);
-        setMessages((items) => [...items, { role: 'assistant', text: answerLocally(question) }]);
-        setChatError('');
+      let reply;
+      if (localMode !== false) {
+        reply = answerLocally(question);
       } else {
-        setChatError(error instanceof Error ? error.message : 'No se pudo enviar la consulta. Inténtalo de nuevo.');
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: question, history }),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            if (result.code === 'GEMINI_NOT_CONFIGURED') {
+              setLocalMode(true);
+              reply = `Gemini no está configurado; te respondo con la información disponible en la página. ${answerLocally(question)}`;
+            } else if ([429, 502, 504].includes(response.status)) {
+              reply = `${result.error || 'Gemini no está disponible temporalmente.'} Mientras tanto, ${answerLocally(question)}`;
+            } else {
+              throw new Error(result.error || `No se pudo consultar Gemini (HTTP ${response.status}).`);
+            }
+          } else if (typeof result.reply !== 'string' || !result.reply.trim()) {
+            throw new Error('Gemini devolvió una respuesta vacía. Inténtalo de nuevo.');
+          } else {
+            reply = result.reply.trim();
+          }
+        } catch (error) {
+          if (!(error instanceof TypeError)) throw error;
+          setLocalMode(true);
+          reply = answerLocally(question);
+        }
       }
+
+      const nextMessages = [...userMessages, { role: 'assistant', text: reply }];
+      setMessages(nextMessages);
+      if (user) {
+        try {
+          const nextId = await saveChatConversation(user.uid, conversationId, question, nextMessages.slice(1));
+          setConversationId(nextId);
+        } catch (error) {
+          console.error('Could not save Belladona chat history:', error);
+          setChatError('Te respondí, pero no se pudo guardar esta conversación. Revisa las reglas de Firestore.');
+        }
+      }
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : 'No se pudo enviar la consulta. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
   };
+
+  function startNewChat() {
+    setConversationId(null);
+    setMessages([{ role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' }]);
+    setChatError('');
+    setShowHistory(false);
+  }
+
+  function openConversation(conversation) {
+    const savedMessages = conversation.messages
+      .filter((message) => ['user', 'assistant'].includes(message.role) && typeof message.text === 'string')
+      .map((message) => ({ role: message.role, text: message.text }));
+    setConversationId(conversation.id);
+    setMessages([
+      { role: 'assistant', text: 'Hola, soy el asistente de BELLADONA. Puedo ayudarte con información disponible en esta página.' },
+      ...savedMessages,
+    ]);
+    setChatError('');
+    setShowHistory(false);
+  }
+
   return <>
     {open && <section className="chat-panel" aria-label="Chat con asistente BELLADONA">
-      <header className="chat-heading"><div className="chat-avatar">B</div><div><strong>Asistente BELLADONA</strong><small>{localMode === true ? 'Modo local · información de la página' : localMode === false ? 'Con tecnología Gemini' : 'Conectando…'}</small></div><button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button></header>
-      <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{renderChatText(message.text)}</div>)}
-        {loading && <div className="chat-message assistant chat-loading" role="status">Gemini está escribiendo…</div>}
-        {chatError && <p className="chat-error" role="alert">{chatError}</p>}
-        {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)} disabled={loading}>{q}</button>)}</div>}
-      </div>
-      <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe tu consulta..." aria-label="Escribe tu consulta" maxLength={1500} disabled={loading} /><button aria-label="Enviar mensaje" disabled={loading || !draft.trim()}><ArrowRight size={18} /></button></form>
-      <small className="chat-privacy">{localMode === true ? 'Respuestas locales; Gemini se activa al configurar la clave.' : 'Tu consulta se procesa con Google Gemini.'}</small>
+      <header className="chat-heading">
+        <div className="chat-avatar">B</div>
+        <div><strong>Asistente BELLADONA</strong><small>{localMode === true ? 'Modo local · información de la página' : localMode === false ? 'Con tecnología Gemini' : 'Conectando…'}</small></div>
+        {user && <>
+          <button className="icon-button" aria-label={showHistory ? 'Volver al chat' : 'Ver historial de conversaciones'} onClick={() => setShowHistory(!showHistory)}><History size={18} /></button>
+          <button className="icon-button" aria-label="Iniciar chat nuevo" onClick={startNewChat}><Plus size={18} /></button>
+        </>}
+        <button className="icon-button" aria-label="Cerrar asistente" onClick={() => setOpen(false)}><X size={18} /></button>
+      </header>
+      {showHistory
+        ? <div className="chat-history-list">
+          <strong>Conversaciones guardadas</strong>
+          {chatError && <p className="chat-error" role="alert">{chatError}</p>}
+          {historyLoading ? <p>Cargando historial…</p> : chatHistory.length
+            ? chatHistory.map((conversation) => <button key={conversation.id} onClick={() => openConversation(conversation)}>
+              <span>{conversation.title}</span>
+              <small>{conversation.updatedAt ? new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(conversation.updatedAt) : 'Reciente'}</small>
+            </button>)
+            : <p>Aún no tienes conversaciones guardadas.</p>}
+        </div>
+        : <>
+          <div className="chat-messages">{messages.map((message, index) => <div key={index} className={`chat-message ${message.role}`}>{renderChatText(message.text)}</div>)}
+            {loading && <div className="chat-message assistant chat-loading" role="status">Gemini está escribiendo…</div>}
+            {chatError && <p className="chat-error" role="alert">{chatError}</p>}
+            {messages.length === 1 && <div className="suggestions">{['¿Qué productos tienen?', '¿Cuánto cuesta?', '¿Realizan envíos?'].map((q) => <button key={q} onClick={() => send(q)} disabled={loading}>{q}</button>)}</div>}
+          </div>
+          <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(); }}><input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe tu consulta..." aria-label="Escribe tu consulta" maxLength={1500} disabled={loading} /><button aria-label="Enviar mensaje" disabled={loading || !draft.trim()}><ArrowRight size={18} /></button></form>
+          <small className="chat-privacy">{user ? (localMode === true ? 'Tus conversaciones se guardan en tu cuenta.' : 'Gemini procesa tu consulta; historial privado de tu cuenta.') : <> <Link to="/ingresar?next=/historial">Inicia sesión con Google</Link> para guardar tus conversaciones.</>}</small>
+        </>}
     </section>}
     <button className="chat-trigger" aria-label={open ? 'Cerrar asistente' : 'Abrir asistente'} onClick={() => setOpen(!open)}>{open ? <X /> : <MessageCircle />}<span>{open ? '' : '¿Te ayudamos?'}</span></button>
   </>;
@@ -469,6 +581,16 @@ export default function App() {
     <Header dark={dark} setDark={setDark} cartCount={cartCount} favCount={favorites.length} openCart={() => setCartOpen(true)} />
     <Routes>
       <Route path="/" element={<Home addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+      <Route path="/ingresar" element={<SignInPage />} />
+      <Route path="/historial" element={<HistoryPage
+        favorites={favorites}
+        onToggleFavorite={toggleFavorite}
+        addToCart={addToCart}
+        cart={cart}
+        updateQuantity={updateQuantity}
+        removeProduct={removeProduct}
+        openCart={() => setCartOpen(true)}
+      />} />
       <Route path="/favoritos" element={<><Favorites favorites={favorites} onToggleFavorite={toggleFavorite} addToCart={addToCart} /><Footer /></>} />
       <Route path="/producto/:id" element={<><ProductDetail addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} /><Footer /></>} />
       <Route path="*" element={<main className="not-found"><span className="eyebrow">404</span><h1>Página no encontrada</h1><Link to="/" className="button button-dark">Volver al inicio</Link></main>} />

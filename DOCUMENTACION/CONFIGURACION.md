@@ -13,6 +13,37 @@ GEMINI_MODEL=gemini-3.6-flash
 
 El número WhatsApp configurado es Perú `+51 907 244 112`. El formulario abre ese chat con los campos llenos como mensaje; el usuario debe confirmar y enviar desde WhatsApp. Cambia `VITE_WHATSAPP_NUMBER` si el número comercial cambia.
 
+## Inicio de sesión e historiales
+
+La tienda reutiliza el proyecto Firebase `miapp-4a216` del proyecto de tesis. La configuración web se carga desde `src/firebase.js`; se puede sustituir con las variables `VITE_FIREBASE_*` del archivo `.env`. La clave web de Firebase identifica el proyecto, no sustituye las reglas de seguridad.
+
+En Firebase Console:
+
+1. En **Authentication → Sign-in method**, habilita **Google** y agrega `localhost` y el dominio publicado en **Authorized domains**.
+2. En **Firestore → Rules**, conserva las reglas actuales del proyecto y agrega estas dos reglas dentro de `match /databases/{database}/documents`. Las colecciones tienen nombres propios de Belladona para no mezclarse con los pedidos del proyecto de tesis:
+
+```text
+match /belladonaOrders/{orderId} {
+  allow create: if request.auth != null
+    && request.resource.data.ownerUid == request.auth.uid;
+  allow read: if request.auth != null
+    && resource.data.ownerUid == request.auth.uid;
+  allow update, delete: if false;
+}
+
+match /belladonaChatConversations/{conversationId} {
+  allow create: if request.auth != null
+    && request.resource.data.ownerUid == request.auth.uid;
+  allow read, delete: if request.auth != null
+    && resource.data.ownerUid == request.auth.uid;
+  allow update: if request.auth != null
+    && resource.data.ownerUid == request.auth.uid
+    && request.resource.data.ownerUid == request.auth.uid;
+}
+```
+
+Al preparar el pedido en el carrito, se guarda una referencia y el detalle en `belladonaOrders` antes de abrir WhatsApp. El estado se muestra como pendiente porque la tienda no puede confirmar si el mensaje se envió desde WhatsApp. Las conversaciones de Gemini se guardan por usuario en `belladonaChatConversations` y se pueden abrir desde el botón de historial dentro del chat. Sin iniciar sesión, el chat sigue disponible pero no persiste y los pedidos pueden enviarse sin guardarse.
+
 Obtén una clave de Gemini API en Google AI Studio. Si una clave se compartió en una conversación o en código público, revócala y genera una nueva. Nunca añadas el prefijo `VITE_` a `GEMINI_API_KEY`: las variables con ese prefijo se incluyen en el frontend. El archivo `.env` está excluido de Git.
 
 ## Ejecutar y desplegar el chat

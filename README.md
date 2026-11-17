@@ -1,6 +1,6 @@
 # BELLADONA JOYERÍA
 
-Tienda web responsive construida con React, Vite y Express. Incluye catálogo de demostración, filtros, búsqueda, detalle de producto, carrito persistente, tema claro/oscuro, galería ampliable, chat conectado con Gemini y contacto configurable.
+Tienda web responsive construida con React, Vite y Express. Incluye catálogo de demostración, filtros, búsqueda, detalle de producto, carrito persistente, tema claro/oscuro, galería ampliable, chat conectado con Gemini, inicio de sesión con Google e historiales de pedidos y conversaciones en Firebase.
 
 ## Requisitos
 
@@ -15,6 +15,8 @@ npm run dev
 ```
 
 Vite muestra la dirección local en la terminal. Mientras `GEMINI_API_KEY` no esté configurada, el chat sigue respondiendo desde la información local del catálogo y las preguntas frecuentes. Para habilitar Gemini, configura `.env` como se describe en `DOCUMENTACION/CONFIGURACION.md` y reinicia el servidor.
+
+El inicio con Google y los historiales usan el proyecto Firebase compartido con la app de tesis. Habilita Google en Firebase Authentication y agrega las reglas de Firestore indicadas en `DOCUMENTACION/CONFIGURACION.md` antes de usar estas funciones.
 
 Para validar una versión de producción:
 

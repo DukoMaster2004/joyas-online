@@ -70,7 +70,7 @@ function SavedLists({ favorites, onToggleFavorite, addToCart, cart, updateQuanti
             <button type="button" aria-label={`Quitar ${product.name} de favoritos`} onClick={() => onToggleFavorite(product.id)}><Heart size={16} fill="currentColor" /></button>
           </div>
         </article>)}</div>
-        : <div className="account-list-empty"><Heart size={23} /><p>Aún no guardas favoritos.</p><Link to="/#coleccion">Explorar colección <ArrowRight size={14} /></Link></div>}
+        : <div className="account-list-empty"><Heart size={23} /><p>Aún no guardas favoritos.</p><Link to="/coleccion">Explorar colección <ArrowRight size={14} /></Link></div>}
       {favoriteProducts.length > 0 && <p className="account-list-note">Tus favoritos se guardan en este dispositivo.</p>}
     </section>
 
@@ -96,7 +96,7 @@ function SavedLists({ favorites, onToggleFavorite, addToCart, cart, updateQuanti
           </article>)}</div>
           <div className="account-cart-subtotal"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
         </>
-        : <div className="account-list-empty"><ShoppingBag size={23} /><p>Tu bolsa está vacía.</p><Link to="/#coleccion">Explorar colección <ArrowRight size={14} /></Link></div>}
+        : <div className="account-list-empty"><ShoppingBag size={23} /><p>Tu bolsa está vacía.</p><Link to="/coleccion">Explorar colección <ArrowRight size={14} /></Link></div>}
     </section>
   </div>;
 }
@@ -193,7 +193,7 @@ export function HistoryPage({ favorites, onToggleFavorite, addToCart, cart, upda
           <div className="order-total"><span>Total referencial</span><strong>{formatPrice(order.total)}</strong></div>
         </article>)}</div>
         : <div className="history-empty">
-          <Link to="/#coleccion" className="button button-dark">Explorar colección <ArrowRight size={16} /></Link>
+          <Link to="/coleccion" className="button button-dark">Explorar colección <ArrowRight size={16} /></Link>
         </div>}
     <SavedLists
       favorites={favorites}

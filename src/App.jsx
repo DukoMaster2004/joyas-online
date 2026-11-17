@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Facebook, Heart, History, LogIn,
   Instagram, LoaderCircle, Menu, MessageCircle, Minus, Moon, Plus, Search,
@@ -34,11 +34,11 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
     navigate(`/producto/${id}`);
   };
   const nav = [
-    ['Colección', '/#coleccion'],
-    ['Nuestra historia', '/#nosotros'],
-    ['Galería', '/#galeria'],
-    ['Redes sociales', '/#redes'],
-    ['Contacto', '/#contacto'],
+    ['Colección', '/coleccion'],
+    ['Nuestra historia', '/historia'],
+    ['Galería', '/galeria'],
+    ['Redes sociales', '/redes'],
+    ['Contacto', '/contacto'],
   ];
 
   return (
@@ -49,7 +49,7 @@ function Header({ dark, setDark, cartCount, favCount, openCart }) {
         <span className="wordmark-text"><span>BELLADONA</span><small>JOYERÍA</small></span>
       </Link>
       <nav className={`main-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegación principal">
-        {nav.map(([label, href]) => <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>)}
+        {nav.map(([label, href]) => <Link key={href} to={href} onClick={() => setMenuOpen(false)}>{label}</Link>)}
         <Link className="nav-account" to={user ? '/historial' : '/ingresar'} onClick={() => setMenuOpen(false)}>{user ? 'Mi historial' : 'Iniciar sesión con Google'}</Link>
       </nav>
       <div className="header-actions">
@@ -402,14 +402,14 @@ function Hero() {
   return <section className="hero">
     <img className="hero-image" src={imageUrl('photo-1611652022419-a9419f74343d', 2000)} alt="Detalle editorial de joyería dorada" fetchpriority="high" />
     <div className="hero-wash" />
-    <div className="hero-content"><span className="eyebrow hero-eyebrow">JOYAS CON HISTORIA</span><h1>BELLADONA<br /><em>JOYERÍA</em></h1><p>{company.tagline}</p><a className="button button-light" href="#coleccion">Explorar colección <ArrowRight size={16} /></a></div>
+    <div className="hero-content"><span className="eyebrow hero-eyebrow">JOYAS CON HISTORIA</span><h1>BELLADONA<br /><em>JOYERÍA</em></h1><p>{company.tagline}</p><Link className="button button-light" to="/coleccion">Explorar colección <ArrowRight size={16} /></Link></div>
     <div className="hero-side-note">HECHO PARA ACOMPAÑARTE <span>—</span> PERÚ</div>
-    <a className="hero-scroll" href="#coleccion"><span>DESCUBRE BELLADONA</span><ArrowDown size={15} /></a>
+    <Link className="hero-scroll" to="/coleccion"><span>DESCUBRE BELLADONA</span><ArrowDown size={15} /></Link>
   </section>;
 }
 
 function SocialSection() {
-  return <section className="social-section section-wrap" id="redes">
+  return <main className="social-section section-wrap standalone-page">
     <div className="section-heading"><div><span className="eyebrow">SÍGUENOS</span><h2>BELLADONA <em>en redes</em></h2></div><p>Novedades, colecciones y detalles de nuestras piezas en Instagram y Facebook.</p></div>
     <div className="social-profiles">{socialProfiles.map((profile) => {
       const Icon = profile.id === 'instagram' ? Instagram : Facebook;
@@ -424,14 +424,10 @@ function SocialSection() {
       <span className="social-post-meta">{post.network === 'Instagram' ? <Instagram size={13} /> : <Facebook size={13} />}<span>{post.caption}</span></span>
     </a>)}</div>
     <p className="catalog-note">Toca una publicación para verla en su red social.</p>
-  </section>;
+  </main>;
 }
 
-function Home({ addToCart, favorites, onToggleFavorite }) {
-  const [filter, setFilter] = useState('Todos');
-  const [activeImage, setActiveImage] = useState(null);
-  const categories = ['Todos', ...new Set(products.map((p) => p.category))];
-  const filtered = filter === 'Todos' ? products : products.filter((p) => p.category === filter);
+function Home() {
   const displayedVideos = videoSlots.filter((video) => video.src);
   return <>
     <Hero />
@@ -440,34 +436,50 @@ function Home({ addToCart, favorites, onToggleFavorite }) {
         <span className="eyebrow">UN DETALLE, UNA EMOCIÓN</span>
         <h2>Cada joya cuenta<br /><em>algo de ti.</em></h2>
         <p>Descubre piezas pensadas para acompañar tus momentos y expresar tu esencia.</p>
-        <a className="text-button" href="#coleccion">Ver colección <ArrowRight size={16} /></a>
+        <Link className="text-button" to="/coleccion">Ver colección <ArrowRight size={16} /></Link>
       </section>
-      <section className="collection-section section-wrap" id="coleccion">
-        <div className="section-heading"><div><span className="eyebrow">SELECCIÓN BELLADONA</span><h2>Piezas <em>especiales</em></h2></div>{galleryImages.length > 0 && <a href="#galeria" className="text-button desktop-link">Descubrir la galería <ArrowUpRight size={16} /></a>}</div>
-        <div className="filter-row" aria-label="Filtrar por categoría">{categories.map((category) => <button className={filter === category ? 'active' : ''} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div>
-        {filtered.length
-          ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite={favorites.includes(product.id)} onToggleFavorite={onToggleFavorite} />)}</div>
-          : <p className="catalog-empty">Todavía no hay piezas confirmadas en esta categoría.</p>}
-        <p className="catalog-note">Precios en soles. Confirma disponibilidad y formas de pago con BELLADONA por WhatsApp.</p>
-      </section>
-      <section className="story-section" id="nosotros">
-        <div className="story-image"><img src={imageUrl('photo-1515562141207-7a88fb7ce338', 1200)} alt="Composición editorial para una historia de joyería" loading="lazy" /></div>
-        <div className="story-copy"><span className="eyebrow">DE UN SUEÑO A TU COLECCIÓN</span><h2>Nuestra <em>historia</em></h2><p>{company.story}</p><p>Creemos que cada joya representa un momento especial, una emoción y una forma única de expresar la personalidad de quien la lleva.</p><a href="#contacto" className="text-button">Conócenos <ArrowRight size={16} /></a><span className="story-mark">B.</span></div>
-      </section>
-      {galleryImages.length > 0 && <section className="gallery-section section-wrap" id="galeria">
-        <div className="section-heading"><div><span className="eyebrow">INSPIRACIÓN BELLADONA</span><h2>Un mundo de <em>detalles</em></h2></div><p>Momentos, texturas y piezas que inspiran.</p></div>
-        <div className="gallery-grid">{galleryImages.map((image, index) => <button className={`gallery-tile gallery-tile-${index + 1}`} key={image.id} onClick={() => setActiveImage(image)} aria-label={`Ampliar ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /><span>{image.category} <ArrowUpRight size={14} /></span></button>)}</div>
-        <p className="catalog-note">Las imágenes son referencias visuales temporales. Sustitúyelas por fotografías propias o autorizadas antes de publicar.</p>
-      </section>}
-      <SocialSection />
       <section className="video-section">
         <div className="video-copy"><span className="eyebrow">EN MOVIMIENTO</span><h2>La belleza está<br /><em>en los detalles.</em></h2><p>Próximamente, conoce de cerca nuestras piezas y colecciones.</p></div>
         <div className="video-placeholder">{displayedVideos.length ? displayedVideos.slice(0, 3).map((video) => <video key={video.id} controls preload="none" poster={video.poster}><source src={video.src} type="video/mp4" /></video>) : <div className="video-empty"><div className="play-mark">B.</div><span>20 espacios listos para tus videos</span><small>Los videos se mostrarán al agregar archivos autorizados en src/data.js.</small></div>}</div>
       </section>
       <section className="quote-section"><span className="quote-mark">“</span><blockquote>La elegancia no consiste en llamar la atención,<br />sino en permanecer en la memoria.</blockquote><span className="eyebrow">BELLADONA JOYERÍA</span></section>
-      <Contact />
     </main>
-    <Footer />
+  </>;
+}
+
+function CollectionPage({ addToCart, favorites, onToggleFavorite }) {
+  const [filter, setFilter] = useState('Todos');
+  const categories = ['Todos', ...new Set(products.map((p) => p.category))];
+  const filtered = filter === 'Todos' ? products : products.filter((p) => p.category === filter);
+  return <main className="collection-section section-wrap collection-page standalone-page">
+    <div className="section-heading"><div><span className="eyebrow">SELECCIÓN BELLADONA</span><h1>Piezas <em>especiales</em></h1></div><Link to="/galeria" className="text-button">Ver galería <ArrowUpRight size={16} /></Link></div>
+    <div className="filter-row" aria-label="Filtrar por categoría">{categories.map((category) => <button className={filter === category ? 'active' : ''} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div>
+    {filtered.length
+      ? <div className="product-grid">{filtered.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite={favorites.includes(product.id)} onToggleFavorite={onToggleFavorite} />)}</div>
+      : <p className="catalog-empty">Todavía no hay piezas confirmadas en esta categoría.</p>}
+    <p className="catalog-note">Precios en soles. Confirma disponibilidad y formas de pago con BELLADONA por WhatsApp.</p>
+  </main>;
+}
+
+function StoryPage() {
+  return <main className="story-section story-page standalone-page">
+    <div className="story-image"><img src={imageUrl('photo-1515562141207-7a88fb7ce338', 1200)} alt="Composición editorial para una historia de joyería" loading="lazy" /></div>
+    <div className="story-copy"><span className="eyebrow">DE UN SUEÑO A TU COLECCIÓN</span><h1>Nuestra <em>historia</em></h1><p>{company.story}</p><p>Creemos que cada joya representa un momento especial, una emoción y una forma única de expresar la personalidad de quien la lleva.</p><Link to="/contacto" className="text-button">Conócenos <ArrowRight size={16} /></Link><span className="story-mark">B.</span></div>
+  </main>;
+}
+
+function GalleryPage() {
+  const [activeImage, setActiveImage] = useState(null);
+  return <>
+    <main className="gallery-section section-wrap gallery-page standalone-page">
+      <div className="section-heading"><div><span className="eyebrow">INSPIRACIÓN BELLADONA</span><h1>Un mundo de <em>detalles</em></h1></div><p>Momentos, texturas y piezas que inspiran.</p></div>
+      {galleryImages.length
+        ? <>
+          <div className="gallery-grid">{galleryImages.map((image, index) => <button className={`gallery-tile gallery-tile-${index + 1}`} key={image.id} onClick={() => setActiveImage(image)} aria-label={`Ampliar ${image.alt}`}><img src={image.src} alt={image.alt} loading="lazy" /><span>{image.category} <ArrowUpRight size={14} /></span></button>)}</div>
+          <p className="catalog-note">Las imágenes son referencias visuales temporales. Sustitúyelas por fotografías propias o autorizadas antes de publicar.</p>
+        </>
+        : <div className="gallery-empty"><span className="eyebrow">PRÓXIMAMENTE</span><p>Estamos preparando una selección de imágenes para compartir contigo.</p><Link to="/coleccion" className="button button-dark">Explorar colección <ArrowRight size={16} /></Link></div>}
+    </main>
     {activeImage && <div className="lightbox" role="dialog" aria-modal="true" aria-label="Imagen ampliada" onClick={() => setActiveImage(null)}><button className="lightbox-close icon-button" aria-label="Cerrar imagen"><X /></button><img src={activeImage.src.replace('w=900', 'w=1800')} alt={activeImage.alt} onClick={(e) => e.stopPropagation()} /><span>{activeImage.category}</span></div>}
   </>;
 }
@@ -498,8 +510,8 @@ function Contact() {
     setFeedback('WhatsApp se abrirá con tu mensaje preparado. Revísalo y pulsa Enviar en WhatsApp.');
     setWhatsappLink(whatsappUrl);
   }
-  return <section className="contact-section section-wrap" id="contacto">
-    <div className="contact-intro"><span className="eyebrow">ESTAMOS PARA TI</span><h2>Hablemos de<br /><em>algo especial.</em></h2><p>¿Tienes una consulta sobre una pieza? Nos encantará ayudarte.</p>
+  return <section className="contact-section section-wrap standalone-page">
+    <div className="contact-intro"><span className="eyebrow">ESTAMOS PARA TI</span><h2>Hablemos de<br /><em> algo especial.</em></h2><p>¿Tienes una consulta sobre una pieza? Nos encantará ayudarte.</p>
       <div className="contact-detail"><span>WHATSAPP</span><a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer"><strong>+51 907 244 112</strong></a></div>
       {company.email && <div className="contact-detail"><span>CORREO</span><strong>{company.email}</strong></div>}
       <div className="contact-detail"><span>CANALES DE WHATSAPP</span><a href={company.whatsappChannel} target="_blank" rel="noreferrer"><strong>Canal de WhatsApp</strong></a><a href={company.whatsappGroup} target="_blank" rel="noreferrer"><strong>Grupo de WhatsApp</strong></a></div>
@@ -524,10 +536,10 @@ function Contact() {
 function Footer() {
   return <footer className="site-footer"><div className="footer-main">
     <div className="footer-brand"><Link to="/" className="wordmark"><span>BELLADONA</span><small>JOYERÍA</small></Link><p>Elegancia que refleja tu esencia.</p></div>
-    <div className="footer-links"><span className="eyebrow">EXPLORA</span><a href="/#coleccion">Colección</a><a href="/#nosotros">Nuestra historia</a><a href="/#galeria">Galería</a><a href="/#redes">Redes sociales</a><a href="/#contacto">Contacto</a></div>
+    <div className="footer-links"><span className="eyebrow">EXPLORA</span><Link to="/coleccion">Colección</Link><Link to="/historia">Nuestra historia</Link><Link to="/galeria">Galería</Link><Link to="/redes">Redes sociales</Link><Link to="/contacto">Contacto</Link><Link to="/historial">Mi historial</Link></div>
     <div className="footer-links"><span className="eyebrow">CONTACTO</span>{company.email && <span>{company.email}</span>}{company.whatsapp && <a href={`https://wa.me/${company.whatsapp}`} target="_blank" rel="noreferrer">WhatsApp +51 907 244 112</a>}<a href={company.whatsappChannel} target="_blank" rel="noreferrer">Canal de WhatsApp</a><a href={company.whatsappGroup} target="_blank" rel="noreferrer">Grupo de WhatsApp</a>{company.instagram && <a href={company.instagram} target="_blank" rel="noreferrer"><Instagram size={15} /> Instagram</a>}{company.facebook && <a href={company.facebook} target="_blank" rel="noreferrer"><Facebook size={15} /> Facebook</a>}</div>
     <div className="footer-signoff">B.<span>JOYAS PARA ATESORAR</span></div>
-  </div><div className="footer-bottom"><span>© {new Date().getFullYear()} BELLADONA JOYERÍA</span><span>Hecho con dedicación en Perú</span><a href="#inicio">Volver arriba ↑</a></div></footer>;
+  </div><div className="footer-bottom"><span>© {new Date().getFullYear()} BELLADONA JOYERÍA</span><span>Hecho con dedicación en Perú</span><Link to="/">Volver al inicio ↑</Link></div></footer>;
 }
 
 function Favorites({ favorites, onToggleFavorite, addToCart }) {
@@ -537,7 +549,7 @@ function Favorites({ favorites, onToggleFavorite, addToCart }) {
     <h1>Tus favoritos <em>({items.length})</em></h1>
     {items.length
       ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} addToCart={addToCart} isFavorite onToggleFavorite={onToggleFavorite} />)}</div>
-      : <div className="favorites-empty"><Heart size={30} /><p>Aquí aparecerán las joyas que guardas con el corazón.</p><Link to="/#coleccion" className="button button-dark">Explorar la colección <ArrowRight size={16} /></Link></div>}
+      : <div className="favorites-empty"><Heart size={30} /><p>Aquí aparecerán las joyas que guardas con el corazón.</p><Link to="/coleccion" className="button button-dark">Explorar la colección <ArrowRight size={16} /></Link></div>}
   </main>;
 }
 
@@ -548,7 +560,13 @@ function ProductDetail({ addToCart, favorites, onToggleFavorite }) {
   if (!product) return <main className="not-found"><span className="eyebrow">PIEZA NO ENCONTRADA</span><h1>Esta joya no está aquí.</h1><Link to="/" className="button button-dark"><ArrowLeft size={16} /> Volver al inicio</Link></main>;
   const isFavorite = favorites.includes(product.id);
   const whatsappUrl = company.whatsapp ? `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(`Hola, quisiera consultar por ${product.name}.`)}` : '';
-  return <main className="product-detail section-wrap"><Link to="/#coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><button className="detail-zoom" aria-label={`Ampliar foto de ${product.name}`} onClick={() => setZoomOpen(true)}><img src={imageUrl(product.image, 1400)} alt={product.name} /><span className="detail-zoom-hint"><ZoomIn size={14} /> Ampliar foto</span></button></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>{product.availability || 'Consultar'}</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<button className="text-button fav-toggle" onClick={() => onToggleFavorite(product.id)}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button><p className="catalog-note">La disponibilidad final y la entrega se confirman por WhatsApp al hacer el pedido.</p></div></div>{zoomOpen && <ImageZoom src={imageUrl(product.image, 1400)} alt={product.name} label={`${product.name} · ${formatPrice(product.price)}`} onClose={() => setZoomOpen(false)} />}</main>;
+  return <main className="product-detail section-wrap"><Link to="/coleccion" className="back-link"><ArrowLeft size={15} /> Volver a la colección</Link><div className="detail-grid"><div className="detail-image"><button className="detail-zoom" aria-label={`Ampliar foto de ${product.name}`} onClick={() => setZoomOpen(true)}><img src={imageUrl(product.image, 1400)} alt={product.name} /><span className="detail-zoom-hint"><ZoomIn size={14} /> Ampliar foto</span></button></div><div className="detail-copy"><span className="eyebrow">{product.category}</span><h1>{product.name}</h1><p className="detail-price">{formatPrice(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-spec"><span>Material</span><strong>{product.material}</strong></div><div className="detail-spec"><span>Disponibilidad</span><strong>{product.availability || 'Consultar'}</strong></div><button className="button button-dark full-button" onClick={() => addToCart(product)}>Añadir a la bolsa <ShoppingBag size={16} /></button>{whatsappUrl ? <a className="button button-outline full-button" href={whatsappUrl} target="_blank" rel="noreferrer">Consultar por WhatsApp <ArrowUpRight size={16} /></a> : <p className="config-note">WhatsApp estará disponible cuando se configure el número comercial.</p>}<button className="text-button fav-toggle" onClick={() => onToggleFavorite(product.id)}><Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}</button><p className="catalog-note">La disponibilidad final y la entrega se confirman por WhatsApp al hacer el pedido.</p></div></div>{zoomOpen && <ImageZoom src={imageUrl(product.image, 1400)} alt={product.name} label={`${product.name} · ${formatPrice(product.price)}`} onClose={() => setZoomOpen(false)} />}</main>;
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
 }
 
 export default function App() {
@@ -578,9 +596,15 @@ export default function App() {
   }
   function removeProduct(id) { setCart((items) => items.filter((item) => item.product.id !== id)); }
   return <div className={`app ${dark ? 'dark-theme' : ''}`} id="inicio">
+    <ScrollToTop />
     <Header dark={dark} setDark={setDark} cartCount={cartCount} favCount={favorites.length} openCart={() => setCartOpen(true)} />
     <Routes>
-      <Route path="/" element={<Home addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/coleccion" element={<CollectionPage addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+      <Route path="/historia" element={<StoryPage />} />
+      <Route path="/galeria" element={<GalleryPage />} />
+      <Route path="/redes" element={<SocialSection />} />
+      <Route path="/contacto" element={<main><Contact /></main>} />
       <Route path="/ingresar" element={<SignInPage />} />
       <Route path="/historial" element={<HistoryPage
         favorites={favorites}
@@ -591,10 +615,11 @@ export default function App() {
         removeProduct={removeProduct}
         openCart={() => setCartOpen(true)}
       />} />
-      <Route path="/favoritos" element={<><Favorites favorites={favorites} onToggleFavorite={toggleFavorite} addToCart={addToCart} /><Footer /></>} />
-      <Route path="/producto/:id" element={<><ProductDetail addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} /><Footer /></>} />
+      <Route path="/favoritos" element={<Favorites favorites={favorites} onToggleFavorite={toggleFavorite} addToCart={addToCart} />} />
+      <Route path="/producto/:id" element={<ProductDetail addToCart={addToCart} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
       <Route path="*" element={<main className="not-found"><span className="eyebrow">404</span><h1>Página no encontrada</h1><Link to="/" className="button button-dark">Volver al inicio</Link></main>} />
     </Routes>
+    <Footer />
     <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} cart={cart} updateQuantity={updateQuantity} removeProduct={removeProduct} />
     <Assistant />
     <WhatsappButton />

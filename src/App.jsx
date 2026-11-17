@@ -241,6 +241,13 @@ function Assistant() {
           }]);
           return;
         }
+        if ([429, 502, 504].includes(response.status)) {
+          setMessages((items) => [...items, {
+            role: 'assistant',
+            text: `${result.error || 'Gemini no está disponible temporalmente.'} Mientras tanto, ${answerLocally(question)}`,
+          }]);
+          return;
+        }
         throw new Error(result.error || `No se pudo consultar Gemini (HTTP ${response.status}).`);
       }
       if (typeof result.reply !== 'string' || !result.reply.trim()) {
